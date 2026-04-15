@@ -2,19 +2,7 @@ import { type ShrimperState, XP_THRESHOLDS } from './state'
 import { type ReminderTimer, getApproxTimeRemaining } from './timer'
 import { type Tip } from './tips'
 import { renderShrimp, getMoodFromBehavior, type Stage } from './characters/shrimp'
-
-const QUIPS = [
-  "Your shrimp believes in you!",
-  "Straighten up, champion!",
-  "Even small stretches count!",
-  "Your future self will thank you!",
-  "Be kind to your spine!",
-  "You got this! 💪",
-]
-
-function randomQuip(): string {
-  return QUIPS[Math.floor(Math.random() * QUIPS.length)]
-}
+import { getQuipForTip } from './tips'
 
 function getLevelName(level: number): string {
   const names = ['Sad Shrimp', 'Waking Shrimp', 'Trying Shrimp', 'Strong Shrimp', 'Champion Shrimp']
@@ -117,7 +105,7 @@ export function renderOverlay(
     <div class="overlay-content">
       <div class="overlay-emoji">${tip.emoji}</div>
       <h2 class="overlay-tip">${tip.text}</h2>
-      <p class="overlay-quip">${randomQuip()}</p>
+      <p class="overlay-quip">${getQuipForTip(tip)}</p>
 
       <div class="overlay-actions">
         <button class="btn btn-primary" id="btn-complete">✅ Done!</button>
@@ -183,6 +171,33 @@ export function updateCharacterMood(state: ShrimperState): void {
     const stage = Math.min(state.progress.level, 5) as Stage
     character.innerHTML = renderShrimp(stage, mood)
   }
+}
+
+export function showLevelUp(level: number): void {
+  const levelName = getLevelName(level)
+  const stage = Math.min(level, 5) as Stage
+  const shrimpSvg = renderShrimp(stage, 'happy')
+
+  const overlay = document.createElement('div')
+  overlay.id = 'levelup-overlay'
+  overlay.className = 'overlay levelup-overlay'
+  overlay.innerHTML = `
+    <div class="overlay-content levelup-content">
+      <div class="levelup-character">${shrimpSvg}</div>
+      <h2 class="levelup-title">Level Up! 🎉</h2>
+      <p class="levelup-name">${levelName}</p>
+      <p class="levelup-message">Your shrimp evolved!</p>
+      <button class="btn btn-primary" id="btn-levelup-close">Amazing!</button>
+    </div>
+  `
+
+  document.body.appendChild(overlay)
+  requestAnimationFrame(() => overlay.classList.add('visible'))
+
+  document.getElementById('btn-levelup-close')!.addEventListener('click', () => {
+    overlay.classList.remove('visible')
+    setTimeout(() => overlay.remove(), 300)
+  })
 }
 
 export function renderSettings(
@@ -269,7 +284,7 @@ export function renderOnboarding(onComplete: (min: number, max: number) => void)
   const app = document.querySelector<HTMLDivElement>('#app')!
   app.innerHTML = `
     <div class="onboarding">
-      <div class="onboarding-character">🦐</div>
+      <div class="onboarding-character">${renderShrimp(1, 'happy')}</div>
       <h1>Welcome to Shrimper!</h1>
       <p>I'll remind you to sit straight, stretch, and take breaks.<br>Help me evolve from a sad shrimp to a champion!</p>
 

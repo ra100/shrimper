@@ -58,9 +58,9 @@ Purpose: Make the first experience delightful and the whole app feel finished.
 
 | Task | 内容 | DoD | Depends | Status |
 |------|------|-----|---------|--------|
-| 5.1 | First-run onboarding — welcome screen, interval setup, start button [feature:a11y] | On first visit (no localStorage data), show welcome flow: app concept → set intervals → "Start" button. Dashboard appears after. | 2.1, 2.5, 1.2 | cc:TODO |
-| 5.2 | Character quips — pool of short phrases per tip, displayed in overlay | Each reminder tip has 2-3 matching character quips (e.g., "Don't be a shrimp! 🦐"). Random quip shown alongside tip in overlay. | 2.2, 1.5 | cc:TODO |
-| 5.3 | Level-up celebration — special animation + message on evolution | When XP crosses a level threshold, show a celebratory overlay with new character stage reveal and congratulations message. | 3.2, 4.4, 4.3 | cc:TODO |
-| 5.4 | Visual polish — color palette, typography, spacing, favicon, meta tags [skip:tdd] | Consistent soft muted color palette. Clean typography. Proper favicon (shrimp). OG meta tags for sharing. Feels like a cozy indie game. | Phase 4 | cc:TODO |
-| 5.5 | GitHub Pages deploy — GitHub Actions workflow, working production URL [skip:tdd] | `git push` to main triggers deploy. App accessible at `username.github.io/shrimper`. All features work in production build. | Phase 4 | cc:TODO |
+| 5.1 | First-run onboarding — welcome screen, interval setup, start button [feature:a11y] | On first visit (no localStorage data), show welcome flow: app concept → set intervals → "Start" button. Dashboard appears after. | 2.1, 2.5, 1.2 | cc:完了 |
+| 5.2 | Character quips — pool of short phrases per tip, displayed in overlay | Each reminder tip has 2-3 matching character quips (e.g., "Don't be a shrimp! 🦐"). Random quip shown alongside tip in overlay. | 2.2, 1.5 | cc:完了 |
+| 5.3 | Level-up celebration — special animation + message on evolution | When XP crosses a level threshold, show a celebratory overlay with new character stage reveal and congratulations message. | 3.2, 4.4, 4.3 | cc:完了 |
+| 5.4 | Visual polish — color palette, typography, spacing, favicon, meta tags [skip:tdd] | Consistent soft muted color palette. Clean typography. Proper favicon (shrimp). OG meta tags for sharing. Feels like a cozy indie game. | Phase 4 | cc:完了 |
+| 5.5 | GitHub Pages deploy — GitHub Actions workflow, working production URL [skip:tdd] | `git push` to main triggers deploy. App accessible at `username.github.io/shrimper`. All features work in production build. | Phase 4 | cc:完了 |
 | 5.6 | Manual QA pass — test full loop on desktop Chrome + mobile Safari | Full reminder cycle works: fire → overlay → done/snooze/dismiss → XP updates → character reacts → next reminder fires. No console errors. | 5.1, 5.2, 5.3, 5.4, 5.5 | cc:TODO |

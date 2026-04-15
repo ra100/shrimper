@@ -12,7 +12,7 @@ People who work at computers for long hours develop poor posture habits — hunc
 
 ## Solution
 
-A lightweight web app (PWA) deployed on GitHub Pages that reminds users at randomized intervals to fix their posture, stretch, and take breaks. Compliance earns XP and evolves a shrimp character from a sad curled-up creature into a proud upright one. Ignoring reminders causes the character to regress and reminder frequency to escalate.
+A lightweight web app deployed on GitHub Pages that reminds users at randomized intervals to fix their posture, stretch, and take breaks. Compliance earns XP and evolves a shrimp character from a sad curled-up creature into a proud upright one. Ignoring reminders causes the character to visually degrade (sad expressions, slumping) and reminder frequency to escalate — but XP is never lost.
 
 ## Target User
 
@@ -20,10 +20,10 @@ Solo developer / knowledge worker who spends 6+ hours daily at a computer and wa
 
 ## Platform & Deployment
 
-- **Static web app (PWA)** — HTML/CSS/JS, no backend
+- **Static web app** — HTML/CSS/JS, no backend
 - **GitHub Pages** — zero hosting cost, deploy from repo
 - **All state client-side** — localStorage for settings and progress, no accounts or servers
-- **Works offline** via service worker
+- **Tab must be open** — reminders fire via in-page timers while the tab/window is open. No background push notifications (would require a server). This is an acceptable v1 limitation for a POC.
 
 ## Core Features
 
@@ -31,7 +31,7 @@ Solo developer / knowledge worker who spends 6+ hours daily at a computer and wa
 
 - User sets a **min and max interval** (e.g. 15–45 minutes)
 - Each reminder fires at a random time within that range
-- **Escalation:** if a reminder is dismissed without completing the action (or ignored entirely), the next interval shrinks toward the minimum
+- **Escalation:** if a reminder is dismissed without completing the action (or ignored entirely), the next interval shrinks toward the minimum. "Dismissed" means closing the overlay or notification without completing and without selecting snooze. Snoozed reminders are excluded from dismissal (no escalation penalty).
 - **Good behavior:** completing reminders lets the interval drift back toward normal range
 - Reminders are a **curated pool of tips:**
   - Sit up straight
@@ -47,9 +47,10 @@ Solo developer / knowledge worker who spends 6+ hours daily at a computer and wa
 
 ### 2. Notification System
 
-- **Browser Notifications** — system-level, work when tab is in background
-- **In-app overlay** — when user clicks through to the app, a full-screen reminder with the tip, character reaction, and action buttons
-- Notification text includes the tip and a short character quip
+- **In-app overlay** — full-screen reminder with the tip, character reaction, and action buttons. This is the primary (and only v1) notification method.
+- Reminders only fire while the tab/window is open — no background push notifications in v1
+- If the tab is not focused, use the document title and favicon to signal a pending reminder (e.g. flashing title "🦐 Time to stretch!")
+- Character quip accompanies each reminder tip
 
 ### 3. Snooze
 
@@ -66,15 +67,15 @@ Solo developer / knowledge worker who spends 6+ hours daily at a computer and wa
   4. **Strong Shrimp** — standing tall, confident smile (Level 4)
   5. **Champion Shrimp** — fully upright, maybe a tiny crown or glow (Level 5)
 - SVG with CSS animations: idle breathing, wiggle on reminder, celebration on XP gain
-- **Regression:** extended neglect (many ignored reminders) causes the character to drop a stage
-- Character is the emotional center — users should feel guilty letting it curl up
+- **Visual degradation (not level loss):** ignoring reminders makes the character visually sad/slumpy within its current stage (droopy eyes, frown, dull colors) but does NOT drop it to a lower evolution stage. XP is never lost. The character recovers its happy appearance when the user starts completing reminders again.
+- Character is the emotional center — users should feel guilty letting it look sad, but never punished by losing hard-earned progress
 
 ### 5. XP & Leveling
 
 - **Earn XP** for completing a reminder action (clicking "Done!" / "I stretched!" etc.)
 - **Bonus XP** for streaks of consecutive completed reminders
 - **XP thresholds** for each evolution stage (tunable, but roughly: 0 / 50 / 150 / 400 / 1000)
-- **XP decay** — slow passive decay if the app isn't used for a day, so progress requires ongoing engagement
+- **XP only goes up** — no decay, no loss. Progress is permanent. The punishment for neglect is visual (sad shrimp) and frequency-based (escalation), not XP-based.
 - Simple **stats panel:** today's XP, total XP, current level, reminders completed today, current streak
 
 ### 6. Dashboard / Main Screen
@@ -88,7 +89,6 @@ Solo developer / knowledge worker who spends 6+ hours daily at a computer and wa
 ### 7. Settings
 
 - Min/max reminder interval (in minutes)
-- Notification permission toggle
 - Reset progress (with confirmation)
 
 ## Non-Goals (v1)
@@ -109,22 +109,23 @@ Solo developer / knowledge worker who spends 6+ hours daily at a computer and wa
 
 ## Technical Constraints
 
-- Pure static site — no build step required for v1 (or minimal: Vite at most)
+- Pure static site — minimal build via Vite
 - GitHub Pages compatible
-- PWA with service worker for offline + notifications
 - All state in localStorage
 - SVG characters inline or as components
+- No service worker needed for v1 (no background notifications, no offline requirement)
 
 ## Success Criteria
 
-- Reminders actually reach the user (notification permission flow works reliably)
+- Reminders fire reliably while tab is open
 - Escalation mechanic creates gentle pressure without being annoying
 - Character evolution is visible and emotionally engaging within the first session
+- Character visual mood responds noticeably to user behavior (happy when completing, sad when ignoring)
 - Snooze works without breaking the reminder loop
-- App loads fast, works offline, deploys to GitHub Pages with zero config
+- App loads fast, deploys to GitHub Pages with minimal config
 
 ## Open Questions
 
 - Exact XP values per action and per level — tune after initial testing
-- Whether to add sound effects for reminders (mentioned in settings, but optional for v1)
+- Whether to add sound effects for reminders — optional for v1
 - Daily summary / history view — nice to have, skip for v1 unless trivial

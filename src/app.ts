@@ -2,7 +2,7 @@ import { loadState, saveState, isFirstRun, addXp, recordIgnored, getXpForComplet
 import { createTimer, type ReminderTimer } from './timer'
 import { createEscalation, escalateOnIgnore, deescalateOnComplete, type EscalationState } from './escalation'
 import { getRandomTip } from './tips'
-import { renderDashboard, renderOverlay, renderOnboarding, renderSettings, hideOverlay, hideSettings, updateStats, updateCharacterMood } from './ui'
+import { renderDashboard, renderOverlay, renderOnboarding, renderSettings, hideOverlay, hideSettings, updateStats, updateCharacterMood, showLevelUp } from './ui'
 import { startTitleFlash, stopTitleFlash } from './tab-indicator'
 
 let state: ShrimperState
@@ -63,6 +63,7 @@ function handleReminder(): void {
 
 function handleComplete(): void {
   stopTitleFlash()
+  const prevLevel = state.progress.level
   const xpGain = getXpForCompletion(state.progress.streak)
   state = addXp(state, xpGain)
   escalation = deescalateOnComplete(escalation, state.settings.maxInterval)
@@ -70,6 +71,10 @@ function handleComplete(): void {
   hideOverlay()
   updateStats(state)
   updateCharacterMood(state)
+
+  if (state.progress.level > prevLevel) {
+    showLevelUp(state.progress.level)
+  }
   timer.scheduleNext()
 }
 
