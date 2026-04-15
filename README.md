@@ -2,7 +2,7 @@
 
 A fun posture & health reminder app that nags you (lovingly) to sit straight, stretch, and take breaks. Your shrimp character evolves as you comply — and gets visibly sad when you don't.
 
-**[Try it live](https://svarba_merck.github.io/shrimper/)**
+**[Try it live](https://ra100.github.io/shrimper/)**
 
 ![Level 1 — Sad Shrimp](https://img.shields.io/badge/Level_1-Sad_Shrimp-e8a090) ![Level 5 — Champion Shrimp](https://img.shields.io/badge/Level_5-Champion_Shrimp-ffc575)
 
@@ -62,4 +62,4 @@ To set up:
 
 ## License
 
-MIT
+[WTFPL](LICENSE) — Do What The Fuck You Want To Public License
