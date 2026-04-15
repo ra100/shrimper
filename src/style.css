@@ -114,9 +114,11 @@ body {
   animation: breathe 3s ease-in-out infinite;
 }
 
-.shrimp-character svg {
+.shrimp-character svg,
+.shrimp-character .shrimp-img {
   width: 100%;
   height: 100%;
+  object-fit: contain;
 }
 
 @keyframes breathe {
@@ -376,9 +378,11 @@ body {
   animation: breathe 3s ease-in-out infinite;
 }
 
-.onboarding-character svg {
+.onboarding-character svg,
+.onboarding-character .shrimp-img {
   width: 100%;
   height: 100%;
+  object-fit: contain;
 }
 
 .onboarding h1 {
@@ -426,9 +430,11 @@ body {
   animation: celebrate 0.8s ease-out;
 }
 
-.levelup-character svg {
+.levelup-character svg,
+.levelup-character .shrimp-img {
   width: 100%;
   height: 100%;
+  object-fit: contain;
 }
 
 .levelup-title {
