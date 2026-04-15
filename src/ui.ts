@@ -1,6 +1,7 @@
 import { type ShrimperState, XP_THRESHOLDS } from './state'
 import { type ReminderTimer, getApproxTimeRemaining } from './timer'
 import { type Tip } from './tips'
+import { renderShrimp, getMoodFromBehavior, type Stage } from './characters/shrimp'
 
 const QUIPS = [
   "Your shrimp believes in you!",
@@ -18,12 +19,6 @@ function randomQuip(): string {
 function getLevelName(level: number): string {
   const names = ['Sad Shrimp', 'Waking Shrimp', 'Trying Shrimp', 'Strong Shrimp', 'Champion Shrimp']
   return names[Math.min(level - 1, names.length - 1)]
-}
-
-function getMoodClass(consecutiveIgnored: number): string {
-  if (consecutiveIgnored >= 3) return 'mood-sad'
-  if (consecutiveIgnored >= 1) return 'mood-neutral'
-  return 'mood-happy'
 }
 
 function getXpProgress(xp: number, level: number): { current: number; needed: number; percent: number } {
@@ -44,15 +39,17 @@ export function renderDashboard(
 ): void {
   const app = document.querySelector<HTMLDivElement>('#app')!
   const { percent } = getXpProgress(state.progress.xp, state.progress.level)
-  const mood = getMoodClass(state.progress.consecutiveIgnored)
+  const mood = getMoodFromBehavior(state.progress.consecutiveIgnored)
+  const stage = Math.min(state.progress.level, 5) as Stage
+  const shrimpSvg = renderShrimp(stage, mood)
 
   app.innerHTML = `
     <div class="dashboard">
       <button class="settings-btn" id="settings-btn" aria-label="Settings">⚙️</button>
 
       <div class="character-area">
-        <div class="shrimp-character ${mood}" id="shrimp-character">
-          <div class="shrimp-body" data-level="${state.progress.level}">🦐</div>
+        <div class="shrimp-character" id="shrimp-character">
+          ${shrimpSvg}
         </div>
         <div class="level-label">${getLevelName(state.progress.level)}</div>
       </div>
@@ -182,7 +179,9 @@ export function updateStats(state: ShrimperState): void {
 export function updateCharacterMood(state: ShrimperState): void {
   const character = document.getElementById('shrimp-character')
   if (character) {
-    character.className = `shrimp-character ${getMoodClass(state.progress.consecutiveIgnored)}`
+    const mood = getMoodFromBehavior(state.progress.consecutiveIgnored)
+    const stage = Math.min(state.progress.level, 5) as Stage
+    character.innerHTML = renderShrimp(stage, mood)
   }
 }
 

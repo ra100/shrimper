@@ -34,11 +34,11 @@ Purpose: Make completing reminders feel rewarding with visible progress.
 
 | Task | 内容 | DoD | Depends | Status |
 |------|------|-----|---------|--------|
-| 3.1 | XP engine — earn XP on complete, bonus for streaks, XP only goes up | Base XP (10) on complete. Streak bonus: +2 per consecutive complete (cap at +10). XP never decreases. Unit tests pass. | 1.2 | cc:TODO |
-| 3.2 | Level system — 5 levels with thresholds, level derived from XP | Levels: 0/50/150/400/1000 XP. Level computed from current XP. Level-up event emitted. | 3.1 | cc:TODO |
-| 3.3 | XP progress bar — animated bar showing progress within current level | Bar fills proportionally between current and next level threshold. Animates on XP gain. | 2.1, 3.2 | cc:TODO |
-| 3.4 | Stats display — today's XP, total XP, level, completions today, current streak | Stats update in real-time on dashboard. "Today" resets at midnight local time. Streak = consecutive completed reminders (breaks on dismiss/ignore). | 2.1, 3.1 | cc:TODO |
-| 3.5 | Approximate countdown — "Next reminder in ~X min" display on dashboard | Shows approximate time until next reminder. Updates every 30 seconds. Doesn't reveal exact random time (shows range bucket: "soon" / "a few minutes" / "a while"). | 2.1, 1.3 | cc:TODO |
+| 3.1 | XP engine — earn XP on complete, bonus for streaks, XP only goes up | Base XP (10) on complete. Streak bonus: +2 per consecutive complete (cap at +10). XP never decreases. Unit tests pass. | 1.2 | cc:完了 |
+| 3.2 | Level system — 5 levels with thresholds, level derived from XP | Levels: 0/50/150/400/1000 XP. Level computed from current XP. Level-up event emitted. | 3.1 | cc:完了 |
+| 3.3 | XP progress bar — animated bar showing progress within current level | Bar fills proportionally between current and next level threshold. Animates on XP gain. | 2.1, 3.2 | cc:完了 |
+| 3.4 | Stats display — today's XP, total XP, level, completions today, current streak | Stats update in real-time on dashboard. "Today" resets at midnight local time. Streak = consecutive completed reminders (breaks on dismiss/ignore). | 2.1, 3.1 | cc:完了 |
+| 3.5 | Approximate countdown — "Next reminder in ~X min" display on dashboard | Shows approximate time until next reminder. Updates every 30 seconds. Doesn't reveal exact random time (shows range bucket: "soon" / "a few minutes" / "a while"). | 2.1, 1.3 | cc:完了 |
 
 ## Phase 4: Shrimp Character
 
@@ -46,11 +46,11 @@ Purpose: The emotional core — make the shrimp feel alive and responsive.
 
 | Task | 内容 | DoD | Depends | Status |
 |------|------|-----|---------|--------|
-| 4.1 | SVG shrimp — 5 evolution stage base poses (sad → champion) [skip:tdd] | 5 distinct SVG files/components, each visually progressing from curled to upright. Clean lines, soft colors, expressive faces. | - | cc:TODO |
-| 4.2 | Mood overlay system — happy/neutral/sad expression variants per stage [skip:tdd] | Each stage has 3 mood variants (happy, neutral, sad). Mood is CSS-class driven, swappable without replacing SVG. | 4.1 | cc:TODO |
-| 4.3 | CSS animations — idle breathing, wiggle on reminder, celebration on XP gain [skip:tdd] | Idle breathing loops continuously. Wiggle triggers on reminder fire. Celebration plays on "Done" click. All smooth 60fps. | 4.1 | cc:TODO |
-| 4.4 | Character state manager — maps XP level + recent behavior to stage + mood | Character shows correct evolution stage for current level. Mood degrades after 3+ consecutive ignored reminders (sad eyes, dull colors). Mood recovers after 2 consecutive completions. | 3.2, 4.2 | cc:TODO |
-| 4.5 | Integrate character into dashboard — large, centered, animated, responsive | Character renders at correct stage + mood, animations play, scales properly on mobile. | 2.1, 4.1, 4.3, 4.4 | cc:TODO |
+| 4.1 | SVG shrimp — 5 evolution stage base poses (sad → champion) [skip:tdd] | 5 distinct SVG files/components, each visually progressing from curled to upright. Clean lines, soft colors, expressive faces. | - | cc:完了 |
+| 4.2 | Mood overlay system — happy/neutral/sad expression variants per stage [skip:tdd] | Each stage has 3 mood variants (happy, neutral, sad). Mood is CSS-class driven, swappable without replacing SVG. | 4.1 | cc:完了 |
+| 4.3 | CSS animations — idle breathing, wiggle on reminder, celebration on XP gain [skip:tdd] | Idle breathing loops continuously. Wiggle triggers on reminder fire. Celebration plays on "Done" click. All smooth 60fps. | 4.1 | cc:完了 |
+| 4.4 | Character state manager — maps XP level + recent behavior to stage + mood | Character shows correct evolution stage for current level. Mood degrades after 3+ consecutive ignored reminders (sad eyes, dull colors). Mood recovers after 2 consecutive completions. | 3.2, 4.2 | cc:完了 |
+| 4.5 | Integrate character into dashboard — large, centered, animated, responsive | Character renders at correct stage + mood, animations play, scales properly on mobile. | 2.1, 4.1, 4.3, 4.4 | cc:完了 |
 
 ## Phase 5: First-Run & Polish
 
