@@ -1,8 +1,4 @@
 import './style.css'
+import { initApp } from './app'
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div class="shrimper">
-    <h1>🦐 Shrimper</h1>
-    <p>Don't sit like a shrimp!</p>
-  </div>
-`
+initApp()

@@ -22,11 +22,11 @@ Purpose: Visible app with the core interaction loop — reminder fires, user res
 
 | Task | 内容 | DoD | Depends | Status |
 |------|------|-----|---------|--------|
-| 2.1 | Dashboard layout — centered character area, XP bar, stats, settings gear [feature:a11y] | Responsive layout renders on desktop and mobile viewport, all sections visible | Phase 1 | cc:TODO |
-| 2.2 | Reminder overlay — full-screen modal with tip, action buttons (Done / Snooze / Dismiss) [feature:a11y] | Overlay appears on timer fire, "Done" grants XP + closes, "Dismiss" closes without XP, snooze options (10m/30m/1h) reschedule timer | 2.1, 1.3, 1.5 | cc:TODO |
-| 2.3 | Tab unfocused indicator — flashing document title + favicon swap on pending reminder | When tab is not focused and reminder fires, title flashes "🦐 Time to stretch!" and favicon changes. Reverts on focus. | 2.2 | cc:TODO |
-| 2.4 | Snooze mechanics — delay current reminder by selected duration, no escalation penalty | Snooze reschedules the current reminder; new random reminders continue independently; max 2 snoozes per reminder before auto-dismiss | 2.2, 1.4 | cc:TODO |
-| 2.5 | Settings panel — min/max interval sliders, reset progress with confirmation dialog [feature:a11y] | Settings changes persist to localStorage, apply to next reminder interval. Reset clears all XP/level data after confirmation. | 2.1, 1.2 | cc:TODO |
+| 2.1 | Dashboard layout — centered character area, XP bar, stats, settings gear [feature:a11y] | Responsive layout renders on desktop and mobile viewport, all sections visible | Phase 1 | cc:完了 |
+| 2.2 | Reminder overlay — full-screen modal with tip, action buttons (Done / Snooze / Dismiss) [feature:a11y] | Overlay appears on timer fire, "Done" grants XP + closes, "Dismiss" closes without XP, snooze options (10m/30m/1h) reschedule timer | 2.1, 1.3, 1.5 | cc:完了 |
+| 2.3 | Tab unfocused indicator — flashing document title + favicon swap on pending reminder | When tab is not focused and reminder fires, title flashes "🦐 Time to stretch!" and favicon changes. Reverts on focus. | 2.2 | cc:完了 |
+| 2.4 | Snooze mechanics — delay current reminder by selected duration, no escalation penalty | Snooze reschedules the current reminder; new random reminders continue independently; max 2 snoozes per reminder before auto-dismiss | 2.2, 1.4 | cc:完了 |
+| 2.5 | Settings panel — min/max interval sliders, reset progress with confirmation dialog [feature:a11y] | Settings changes persist to localStorage, apply to next reminder interval. Reset clears all XP/level data after confirmation. | 2.1, 1.2 | cc:完了 |
 
 ## Phase 3: XP System & Stats
 
