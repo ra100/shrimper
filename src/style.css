@@ -48,6 +48,40 @@ body {
   gap: 20px;
 }
 
+/* Notification banner */
+.notification-banner {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.banner-prompt {
+  background: var(--accent-light);
+  border: 1px solid var(--accent);
+}
+
+.banner-denied {
+  background: #f5f0eb;
+  border: 1px solid var(--border);
+  color: var(--text-light);
+}
+
+.btn-enable-notif {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.btn-enable-notif:hover {
+  text-decoration: underline;
+}
+
 .settings-btn {
   position: absolute;
   top: 0;

@@ -3,6 +3,7 @@ import { type ReminderTimer, getApproxTimeRemaining } from './timer'
 import { type Tip } from './tips'
 import { renderShrimp, getMoodFromBehavior, type Stage } from './characters/shrimp'
 import { getQuipForTip } from './tips'
+import { getPermissionState } from './notifications'
 
 function getLevelName(level: number): string {
   const names = ['Sad Shrimp', 'Waking Shrimp', 'Trying Shrimp', 'Strong Shrimp', 'Champion Shrimp']
@@ -23,7 +24,7 @@ let countdownInterval: ReturnType<typeof setInterval> | null = null
 export function renderDashboard(
   state: ShrimperState,
   timer: ReminderTimer,
-  handlers: { onOpenSettings: () => void },
+  handlers: { onOpenSettings: () => void; onEnableNotifications: () => void },
 ): void {
   const app = document.querySelector<HTMLDivElement>('#app')!
   const { percent } = getXpProgress(state.progress.xp, state.progress.level)
@@ -31,9 +32,20 @@ export function renderDashboard(
   const stage = Math.min(state.progress.level, 5) as Stage
   const shrimpSvg = renderShrimp(stage, mood)
 
+  const notifPerm = getPermissionState()
+  const showBanner = notifPerm !== 'granted' && notifPerm !== 'unsupported'
+
   app.innerHTML = `
     <div class="dashboard">
       <button class="settings-btn" id="settings-btn" aria-label="Settings">⚙️</button>
+
+      ${showBanner ? `
+        <div class="notification-banner ${notifPerm === 'denied' ? 'banner-denied' : 'banner-prompt'}" id="notification-banner">
+          ${notifPerm === 'denied'
+            ? '🔕 Notifications blocked — enable in browser settings for reminders outside this tab'
+            : '<button class="btn-enable-notif" id="btn-enable-notif">🔔 Enable notifications to get reminders in other apps</button>'}
+        </div>
+      ` : ''}
 
       <div class="character-area">
         <div class="shrimp-character" id="shrimp-character">
@@ -71,6 +83,11 @@ export function renderDashboard(
   `
 
   document.getElementById('settings-btn')!.addEventListener('click', handlers.onOpenSettings)
+
+  const enableBtn = document.getElementById('btn-enable-notif')
+  if (enableBtn) {
+    enableBtn.addEventListener('click', handlers.onEnableNotifications)
+  }
 
   // Update countdown periodically
   if (countdownInterval) clearInterval(countdownInterval)

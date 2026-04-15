@@ -4,7 +4,7 @@ import { createEscalation, escalateOnIgnore, deescalateOnComplete, type Escalati
 import { getRandomTip } from './tips'
 import { renderDashboard, renderOverlay, renderOnboarding, renderSettings, hideOverlay, hideSettings, updateStats, updateCharacterMood, showLevelUp } from './ui'
 import { startTitleFlash, stopTitleFlash } from './tab-indicator'
-import { requestPermission, showNotification } from './notifications'
+import { requestPermission, showNotification, getPermissionState } from './notifications'
 import { getQuipForTip } from './tips'
 
 let state: ShrimperState
@@ -32,7 +32,7 @@ async function handleOnboardingComplete(minInterval: number, maxInterval: number
   startDashboard()
 }
 
-function startDashboard(): void {
+async function startDashboard(): Promise<void> {
   escalation = createEscalation(state.settings.minInterval, state.settings.maxInterval)
 
   timer = createTimer(
@@ -43,7 +43,15 @@ function startDashboard(): void {
 
   renderDashboard(state, timer, {
     onOpenSettings: () => renderSettings(state, handleSettingsChange, handleResetProgress),
+    onEnableNotifications: handleEnableNotifications,
   })
+
+  // Request permission if not yet decided
+  const perm = getPermissionState()
+  if (perm === 'default') {
+    await requestPermission()
+    updateNotificationBanner()
+  }
 
   timer.start()
 }
@@ -103,6 +111,27 @@ function handleDismiss(): void {
   updateStats(state)
   updateCharacterMood(state)
   timer.scheduleNext()
+}
+
+async function handleEnableNotifications(): Promise<void> {
+  const result = await requestPermission()
+  updateNotificationBanner()
+  if (result === 'granted') {
+    showNotification('🦐 Notifications enabled!', 'Your shrimp will now nudge you even when you\'re in another app.')
+  }
+}
+
+function updateNotificationBanner(): void {
+  const banner = document.getElementById('notification-banner')
+  if (banner) {
+    const perm = getPermissionState()
+    if (perm === 'granted') {
+      banner.style.display = 'none'
+    } else if (perm === 'denied') {
+      banner.innerHTML = '🔕 Notifications blocked — enable in browser settings for reminders outside this tab'
+      banner.className = 'notification-banner banner-denied'
+    }
+  }
 }
 
 function handleSettingsChange(minInterval: number, maxInterval: number): void {
