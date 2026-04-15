@@ -4,6 +4,8 @@ import { createEscalation, escalateOnIgnore, deescalateOnComplete, type Escalati
 import { getRandomTip } from './tips'
 import { renderDashboard, renderOverlay, renderOnboarding, renderSettings, hideOverlay, hideSettings, updateStats, updateCharacterMood, showLevelUp } from './ui'
 import { startTitleFlash, stopTitleFlash } from './tab-indicator'
+import { requestPermission, showNotification } from './notifications'
+import { getQuipForTip } from './tips'
 
 let state: ShrimperState
 let escalation: EscalationState
@@ -22,10 +24,11 @@ export function initApp(): void {
   startDashboard()
 }
 
-function handleOnboardingComplete(minInterval: number, maxInterval: number): void {
+async function handleOnboardingComplete(minInterval: number, maxInterval: number): Promise<void> {
   state.settings.minInterval = minInterval
   state.settings.maxInterval = maxInterval
   saveState(state)
+  await requestPermission()
   startDashboard()
 }
 
@@ -48,6 +51,8 @@ function startDashboard(): void {
 function handleReminder(): void {
   snoozeCount = 0
   const tip = getRandomTip()
+
+  showNotification(`${tip.emoji} ${tip.text}`, getQuipForTip(tip))
 
   if (!document.hasFocus()) {
     startTitleFlash(tip.emoji + ' ' + tip.text)
