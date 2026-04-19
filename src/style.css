@@ -134,20 +134,29 @@ body {
   animation: breathe 3s ease-in-out infinite;
 }
 
-.shrimp .tail {
+.shrimp .tail,
+.shrimp .legs {
   transition: transform 600ms ease;
-  transform-origin: 184px 82px;
-  transform: rotate(calc(var(--curl) * 30deg));
+}
+
+.shrimp .tail {
+  transform-origin: 170px 110px;
+  transform: rotate(calc(var(--curl) * 25deg));
+}
+
+.shrimp .legs {
+  transform-origin: 100px 148px;
+  transform: rotate(calc(var(--curl) * 8deg));
 }
 
 .shrimp .eye {
   transition: transform 600ms ease;
-  transform-origin: 73px 151px;
+  transform-origin: 63px 93px;
   transform: translateY(calc(var(--curl) * 3px)) scaleY(calc(0.6 + var(--c) * 0.4));
 }
 
 .shrimp .eyelid {
-  transform-origin: 72px 140px;
+  transform-origin: 62px 83px;
   transform: scaleY(0);
   animation: blink 6s infinite;
 }
