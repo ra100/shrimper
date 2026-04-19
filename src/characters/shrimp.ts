@@ -2,153 +2,153 @@
  * Parametric SVG shrimp. One scalar `condition` (0..100) drives spine curl
  * via CSS custom properties.
  *
- * Design: emoji-🦐-style. Body is ONE continuous crescent — head (round fat
- * end) at lower-left, tapering up-right into narrow abdomen, tail fan at
- * upper-right tip. Armor/segments are strokes drawn on top of the crescent.
+ * Design philosophy (iteration 11): simplify to cartoon essentials.
+ *   - Big round head bubble at lower-left (holds face)
+ *   - One arcing tail body curving up and right
+ *   - Dramatic tail fan at upper-right tip
+ *   - 2 antennae only (1 long trail, 1 short feeler)
+ *   - No legs (reads cleaner, more emoji-like)
  *
- * Curl mechanic: tail rotates around its joint. At --c=1 baseline pose;
- * at --c=0 the tail tucks forward, squashing the crescent tighter.
+ * Curl mechanic: tail rotates at its base. Baseline shape already has
+ * strong C-arch, so even at c=1 silhouette is clearly shrimp-like.
  */
 
 export function renderShrimp(): string {
   return `
-    <svg class="shrimp" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-label="Shrimp character">
+    <svg class="shrimp" viewBox="-5 0 215 210" xmlns="http://www.w3.org/2000/svg" aria-label="Shrimp character">
       <defs>
-        <linearGradient id="shBody" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#ffd4bc"/>
-          <stop offset="50%" stop-color="#ff8f68"/>
-          <stop offset="100%" stop-color="#bd4d2c"/>
+        <linearGradient id="shHead" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#ffd8bf"/>
+          <stop offset="60%" stop-color="#ff8f68"/>
+          <stop offset="100%" stop-color="#c95a34"/>
         </linearGradient>
-        <linearGradient id="shTail" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#ff9672"/>
-          <stop offset="100%" stop-color="#ffb596"/>
+        <linearGradient id="shTail" x1="0" y1="0" x2="1" y2="0.5">
+          <stop offset="0%" stop-color="#ff9470"/>
+          <stop offset="60%" stop-color="#ff7749"/>
+          <stop offset="100%" stop-color="#e8552a"/>
+        </linearGradient>
+        <linearGradient id="shFan" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#ffa480"/>
+          <stop offset="100%" stop-color="#ffc7ab"/>
         </linearGradient>
       </defs>
 
-      <!-- Antennae (trailing back from head at (60,140), behind body) -->
+      <!-- Antennae: 2 long whiskers trailing back from head -->
       <g class="antennae">
         <path class="antenna long-1"
-              d="M 58 152 Q 26 180 6 198"
-              stroke="#7a2f1c" stroke-width="2" fill="none" stroke-linecap="round"/>
+              d="M 50 130 Q 16 150 6 190"
+              stroke="#7a2f1c" stroke-width="2.2" fill="none" stroke-linecap="round"/>
         <path class="antenna long-2"
-              d="M 52 146 Q 20 150 4 150"
+              d="M 46 124 Q 14 126 4 122"
               stroke="#7a2f1c" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-        <path class="antenna short-1"
-              d="M 62 124 Q 48 108 42 90"
-              stroke="#8a3a22" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-        <path class="antenna short-2"
-              d="M 74 118 Q 72 100 76 82"
-              stroke="#8a3a22" stroke-width="1.5" fill="none" stroke-linecap="round"/>
       </g>
 
       <g class="body">
+        <!-- TAIL BODY: dramatically arched abdomen, head-joint (left-bottom) to tail-base (upper-right) -->
+        <g class="curl-section">
+          <!-- Main arched abdomen — strong C arching from (82,150) UP over peak (130,40) to tail-base (180,80) -->
+          <defs>
+            <clipPath id="abdomenClip">
+              <path d="M 82 148
+                       Q 72 78 140 38
+                       Q 188 36 186 78
+                       Q 180 110 150 128
+                       Q 118 146 90 158
+                       Q 74 158 82 148 Z"/>
+            </clipPath>
+          </defs>
 
-        <!-- Pereopods (walking legs hanging down under head, head-bottom ~178) -->
-        <g class="pereopods">
-          <path d="M 80 178 L 76 192 L 72 194"
-                stroke="#8a3a22" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M 96 180 L 98 194 L 94 196"
-                stroke="#8a3a22" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <path class="abdomen"
+                d="M 82 148
+                   Q 72 78 140 38
+                   Q 188 36 186 78
+                   Q 180 110 150 128
+                   Q 118 146 90 158
+                   Q 74 158 82 148 Z"
+                fill="url(#shTail)" stroke="#7a2f1c" stroke-width="2" stroke-linejoin="round"/>
+
+          <!-- Segment armor joints (clipped to stay inside abdomen) -->
+          <g clip-path="url(#abdomenClip)">
+            <path d="M 94 156 Q 84 104 90 60"
+                  stroke="#8a3a22" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.5"/>
+            <path d="M 120 150 Q 112 94 124 48"
+                  stroke="#8a3a22" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.5"/>
+            <path d="M 150 132 Q 150 82 168 42"
+                  stroke="#8a3a22" stroke-width="1.3" fill="none" stroke-linecap="round" opacity="0.5"/>
+          </g>
+
+          <!-- Dorsal highlight along arch peak -->
+          <path d="M 90 120 Q 130 50 180 64"
+                stroke="#ffe8d6" stroke-width="3.5" fill="none" stroke-linecap="round" opacity="0.5"/>
+
+          <!-- TAIL FAN: big, splayed, 3-blade at tip (~180,76) -->
+          <g class="tail">
+            <!-- Upper blade (tallest) -->
+            <path d="M 172 70
+                     Q 192 26 200 12
+                     Q 202 44 186 82 Z"
+                  fill="url(#shFan)" stroke="#7a2f1c" stroke-width="1.5" stroke-linejoin="round"/>
+            <!-- Center blade (pointed telson) -->
+            <path d="M 176 78
+                     Q 204 48 206 56
+                     Q 202 82 188 92
+                     Q 178 86 176 78 Z"
+                  fill="url(#shFan)" stroke="#7a2f1c" stroke-width="1.5" stroke-linejoin="round"/>
+            <!-- Lower blade -->
+            <path d="M 178 86
+                     Q 202 86 204 102
+                     Q 186 108 174 96
+                     Q 172 90 178 86 Z"
+                  fill="url(#shFan)" stroke="#7a2f1c" stroke-width="1.5" stroke-linejoin="round"/>
+            <!-- Fin ribs -->
+            <path d="M 178 72 Q 188 50 196 30" stroke="#7a2f1c" stroke-width="1" fill="none" opacity="0.5"/>
+            <path d="M 182 82 Q 192 72 202 64" stroke="#7a2f1c" stroke-width="1" fill="none" opacity="0.5"/>
+            <path d="M 182 94 Q 192 94 200 96" stroke="#7a2f1c" stroke-width="1" fill="none" opacity="0.5"/>
+          </g>
         </g>
 
-        <!-- Pleopods (swimmerets under abdomen belly, belly at y~170) -->
-        <g class="pleopods">
-          <path d="M 116 178 Q 116 188 112 192"
-                stroke="#8a3a22" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-          <path d="M 134 168 Q 138 180 134 184"
-                stroke="#8a3a22" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-          <path d="M 152 152 Q 158 162 154 168"
-                stroke="#8a3a22" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-        </g>
-
-        <!-- Rostrum (small serrated spike pointing forward from between eyes) -->
+        <!-- HEAD BUBBLE: fat round head, anchored (doesn't rotate with curl) -->
+        <!-- Rostrum spike (small serrated point between eye and body arch) -->
         <g class="rostrum">
-          <path d="M 70 128
-                   L 50 94
-                   L 66 132 Z"
-                fill="url(#shBody)" stroke="#7a2f1c" stroke-width="1.5" stroke-linejoin="round"/>
-          <path d="M 58 108 L 54 104" stroke="#7a2f1c" stroke-width="1.3" fill="none" stroke-linecap="round"/>
-          <path d="M 64 120 L 60 116" stroke="#7a2f1c" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+          <path d="M 78 116
+                   L 62 82
+                   L 76 124 Z"
+                fill="url(#shHead)" stroke="#7a2f1c" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M 68 94 L 64 90" stroke="#7a2f1c" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+          <path d="M 72 106 L 68 102" stroke="#7a2f1c" stroke-width="1.3" fill="none" stroke-linecap="round"/>
         </g>
-
-        <!-- MAIN CRESCENT BODY — classic prawn C-arch.
-             Head (fat, round): centered at (78, 140), radius ~36
-             Abdomen arches upward: peak near (130, 50)
-             Tail base (narrow): tapers at (176, 56)
-             The OUTLINE: back goes up from head-top (78,108) over peak (130,40) down to tail (176,50).
-             Belly goes from tail (176,72) under belly (130,90) down to head-bottom (78,172). -->
-        <path class="main-body"
-              d="M 60 140
-                 Q 42 170 72 180
-                 Q 112 186 142 164
-                 Q 176 138 184 90
-                 Q 188 54 172 48
-                 Q 154 48 146 72
-                 Q 134 102 116 118
-                 Q 96 128 82 124
-                 Q 68 118 60 128
-                 Q 50 138 60 140 Z"
-              fill="url(#shBody)" stroke="#7a2f1c" stroke-width="2" stroke-linejoin="round"/>
-
-        <!-- Segment armor joints (short curves perpendicular to body axis) -->
-        <path d="M 98 128 Q 94 146 96 180"
-              stroke="#7a2f1c" stroke-width="1.3" fill="none" stroke-linecap="round" opacity="0.55"/>
-        <path d="M 122 112 Q 118 140 120 180"
-              stroke="#7a2f1c" stroke-width="1.3" fill="none" stroke-linecap="round" opacity="0.55"/>
-        <path d="M 148 88 Q 144 120 146 168"
-              stroke="#7a2f1c" stroke-width="1.2" fill="none" stroke-linecap="round" opacity="0.55"/>
-        <path d="M 170 62 Q 168 96 168 140"
-              stroke="#7a2f1c" stroke-width="1.1" fill="none" stroke-linecap="round" opacity="0.55"/>
-
-        <!-- Dorsal highlight (subtle curve along top of arch) -->
-        <path d="M 90 116 Q 138 74 176 62"
-              stroke="#fff0e4" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.45"/>
-
-        <!-- Belly highlight (soft) -->
-        <path d="M 84 168 Q 128 184 162 158"
-              stroke="#fff0e4" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.25"/>
-
-        <!-- TAIL FAN — at tapered end around (180, 50) -->
-        <g class="tail">
-          <!-- Upper uropod -->
-          <path d="M 176 48
-                   Q 196 18 200 8
-                   Q 202 38 188 64 Z"
-                fill="url(#shTail)" stroke="#7a2f1c" stroke-width="1.4" stroke-linejoin="round"/>
-          <!-- Telson (pointed center blade) -->
-          <path d="M 178 54
-                   Q 202 44 204 50
-                   Q 200 72 184 76
-                   Q 178 68 178 54 Z"
-                fill="url(#shTail)" stroke="#7a2f1c" stroke-width="1.4" stroke-linejoin="round"/>
-          <!-- Lower uropod -->
-          <path d="M 178 62
-                   Q 200 70 200 82
-                   Q 186 86 176 76
-                   Q 174 68 178 62 Z"
-                fill="url(#shTail)" stroke="#7a2f1c" stroke-width="1.4" stroke-linejoin="round"/>
-          <!-- Fin ribs -->
-          <path d="M 180 50 Q 190 30 198 18" stroke="#7a2f1c" stroke-width="0.9" fill="none" opacity="0.5"/>
-          <path d="M 182 58 Q 192 54 202 56" stroke="#7a2f1c" stroke-width="0.9" fill="none" opacity="0.5"/>
-          <path d="M 182 70 Q 192 72 198 78" stroke="#7a2f1c" stroke-width="0.9" fill="none" opacity="0.5"/>
+        <g class="head">
+          <!-- Fat round head shield -->
+          <path d="M 64 118
+                   Q 108 106 112 150
+                   Q 108 178 78 178
+                   Q 48 178 38 156
+                   Q 30 134 40 120
+                   Q 50 112 64 118 Z"
+                fill="url(#shHead)" stroke="#7a2f1c" stroke-width="2" stroke-linejoin="round"/>
+          <!-- Head highlight -->
+          <path d="M 52 130 Q 72 124 94 146"
+                stroke="#ffe8d6" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.6"/>
         </g>
       </g>
 
-      <!-- FACE: eye + mouth on fat head end (around 78,150) -->
+      <!-- FACE: eye + mouth on head -->
       <g class="face">
         <g class="eye">
-          <circle class="eye-white" cx="78" cy="148" r="8" fill="#ffffff" stroke="#7a2f1c" stroke-width="1.5"/>
-          <circle class="eyeball" cx="79" cy="149" r="4.2" fill="#2a2030"/>
-          <circle class="eye-shine" cx="81" cy="147" r="1.5" fill="#ffffff"/>
-          <rect class="eyelid" x="67" y="137" width="20" height="17" fill="#ff8f68"/>
+          <circle class="eye-white" cx="74" cy="144" r="9" fill="#ffffff" stroke="#7a2f1c" stroke-width="1.6"/>
+          <circle class="eyeball" cx="75" cy="145" r="4.8" fill="#2a2030"/>
+          <circle class="eye-shine" cx="77" cy="142" r="1.7" fill="#ffffff"/>
+          <rect class="eyelid" x="63" y="132" width="22" height="18" fill="#ff8f68"/>
         </g>
+        <!-- Smile: curve goes DOWN-UP (U shape) — control y lower than endpoints -->
         <path class="mouth smile"
-              d="M 82 168 Q 92 174 102 167"
-              stroke="#2a2030" stroke-width="2" fill="none" stroke-linecap="round"/>
+              d="M 74 162 Q 84 174 94 162"
+              stroke="#2a2030" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+        <!-- Frown: inverted arc (∩ shape) — control y higher than endpoints -->
         <path class="mouth frown"
-              d="M 82 172 Q 92 164 102 174"
-              stroke="#2a2030" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <circle class="blush" cx="102" cy="168" r="3.8" fill="#ff6b6b" opacity="0.35"/>
+              d="M 74 170 Q 84 158 94 170"
+              stroke="#2a2030" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+        <ellipse class="blush" cx="96" cy="162" rx="5" ry="3" fill="#ff6b6b" opacity="0.35"/>
       </g>
     </svg>
   `

@@ -122,9 +122,10 @@ body {
 .shrimp {
   --c: 0.5;
   --curl: calc(1 - var(--c));
+  /* c=1: natural vivid warm orange (no filter). c=0: desaturated + slightly darker. */
   filter:
-    hue-rotate(calc((var(--c) - 0.5) * 40deg))
-    saturate(calc(0.5 + var(--c) * 0.7));
+    saturate(calc(0.3 + var(--c) * 0.9))
+    brightness(calc(0.85 + var(--c) * 0.2));
   transition: filter 600ms ease;
 }
 
@@ -133,39 +134,31 @@ body {
   animation: breathe 3s ease-in-out infinite;
 }
 
-.shrimp .main-body,
+.shrimp .curl-section,
 .shrimp .tail,
-.shrimp .rostrum,
-.shrimp .pereopods,
-.shrimp .pleopods {
+.shrimp .rostrum {
   transition: transform 600ms ease;
 }
 
-/* The body is a single crescent path — curl effect comes from tail
-   rotation (follows tip of body) plus subtle squash to simulate ball-curl. */
+/* Abdomen + tail rotate together around head joint. Head stays anchored. */
+.shrimp .curl-section {
+  transform-origin: 90px 150px;
+  transform: rotate(calc(var(--curl) * 40deg));
+}
+
 .shrimp .tail {
-  transform-origin: 180px 66px;
-  transform: rotate(calc(var(--curl) * 45deg));
-}
-
-.shrimp .pereopods {
-  transform-origin: 88px 180px;
-  transform: rotate(calc(var(--curl) * 10deg));
-}
-
-.shrimp .pleopods {
-  transform-origin: 132px 172px;
-  transform: rotate(calc(var(--curl) * 14deg));
+  transform-origin: 180px 82px;
+  transform: rotate(calc(var(--curl) * 20deg));
 }
 
 .shrimp .eye {
   transition: transform 600ms ease;
-  transform-origin: 79px 149px;
+  transform-origin: 75px 145px;
   transform: translateY(calc(var(--curl) * 3px)) scaleY(calc(0.6 + var(--c) * 0.4));
 }
 
 .shrimp .eyelid {
-  transform-origin: 77px 137px;
+  transform-origin: 74px 132px;
   transform: scaleY(0);
   animation: blink 6s infinite;
 }
