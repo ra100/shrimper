@@ -134,31 +134,20 @@ body {
   animation: breathe 3s ease-in-out infinite;
 }
 
-.shrimp .curl-section,
-.shrimp .tail,
-.shrimp .rostrum {
-  transition: transform 600ms ease;
-}
-
-/* Abdomen + tail rotate together around head joint. Head stays anchored. */
-.shrimp .curl-section {
-  transform-origin: 90px 150px;
-  transform: rotate(calc(var(--curl) * 40deg));
-}
-
 .shrimp .tail {
-  transform-origin: 180px 82px;
-  transform: rotate(calc(var(--curl) * 20deg));
+  transition: transform 600ms ease;
+  transform-origin: 184px 82px;
+  transform: rotate(calc(var(--curl) * 30deg));
 }
 
 .shrimp .eye {
   transition: transform 600ms ease;
-  transform-origin: 75px 145px;
+  transform-origin: 73px 151px;
   transform: translateY(calc(var(--curl) * 3px)) scaleY(calc(0.6 + var(--c) * 0.4));
 }
 
 .shrimp .eyelid {
-  transform-origin: 74px 132px;
+  transform-origin: 72px 140px;
   transform: scaleY(0);
   animation: blink 6s infinite;
 }
