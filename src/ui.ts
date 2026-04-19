@@ -1,25 +1,38 @@
-import { type ShrimperState, XP_THRESHOLDS } from './state'
+import { type ShrimperState } from './state'
 import { type ReminderTimer, getApproxTimeRemaining } from './timer'
 import { type Tip } from './tips'
-import { renderShrimp, getMoodFromBehavior, type Stage } from './characters/shrimp'
+import { renderShrimp, updateShrimp } from './characters/shrimp'
 import { getQuipForTip } from './tips'
 import { getPermissionState } from './notifications'
-
-function getLevelName(level: number): string {
-  const names = ['Sad Shrimp', 'Waking Shrimp', 'Trying Shrimp', 'Strong Shrimp', 'Champion Shrimp']
-  return names[Math.min(level - 1, names.length - 1)]
-}
-
-function getXpProgress(xp: number, level: number): { current: number; needed: number; percent: number } {
-  const currentThreshold = XP_THRESHOLDS[level - 1] || 0
-  const nextThreshold = XP_THRESHOLDS[level] || XP_THRESHOLDS[XP_THRESHOLDS.length - 1]
-  const current = xp - currentThreshold
-  const needed = nextThreshold - currentThreshold
-  const percent = needed > 0 ? Math.min((current / needed) * 100, 100) : 100
-  return { current, needed, percent }
-}
+import { ACHIEVEMENT_META, ACHIEVEMENT_ORDER } from './achievements'
 
 let countdownInterval: ReturnType<typeof setInterval> | null = null
+
+function renderAchievementsGrid(state: ShrimperState): string {
+  return `
+    <div class="achievements-grid">
+      ${ACHIEVEMENT_ORDER.map(id => {
+        const meta = ACHIEVEMENT_META[id]
+        const unlockedAt = state.progress.achievements[id]
+        if (unlockedAt) {
+          return `
+            <div class="achievement-tile unlocked" data-id="${id}">
+              <span class="ach-icon">${meta.icon}</span>
+              <span class="ach-name">${meta.name}</span>
+              <span class="ach-date">${unlockedAt}</span>
+            </div>
+          `
+        }
+        return `
+          <div class="achievement-tile locked" data-id="${id}">
+            <span class="ach-icon">🔒</span>
+            <span class="ach-name">${meta.name}</span>
+          </div>
+        `
+      }).join('')}
+    </div>
+  `
+}
 
 export function renderDashboard(
   state: ShrimperState,
@@ -27,10 +40,7 @@ export function renderDashboard(
   handlers: { onOpenSettings: () => void; onEnableNotifications: () => void },
 ): void {
   const app = document.querySelector<HTMLDivElement>('#app')!
-  const { percent } = getXpProgress(state.progress.xp, state.progress.level)
-  const mood = getMoodFromBehavior(state.progress.consecutiveIgnored)
-  const stage = Math.min(state.progress.level, 5) as Stage
-  const shrimpSvg = renderShrimp(stage, mood)
+  const condition = state.progress.condition
 
   const notifPerm = getPermissionState()
   const showBanner = notifPerm !== 'granted' && notifPerm !== 'unsupported'
@@ -49,16 +59,15 @@ export function renderDashboard(
 
       <div class="character-area">
         <div class="shrimp-character" id="shrimp-character">
-          ${shrimpSvg}
+          ${renderShrimp()}
         </div>
-        <div class="level-label">${getLevelName(state.progress.level)}</div>
       </div>
 
-      <div class="xp-section">
-        <div class="xp-bar-container">
-          <div class="xp-bar" style="width: ${percent}%"></div>
+      <div class="condition-section">
+        <div class="condition-bar-container">
+          <div class="condition-bar" style="width: ${condition}%"></div>
         </div>
-        <div class="xp-label">Level ${state.progress.level} — ${state.progress.xp} XP</div>
+        <div class="condition-label">Posture ${condition}%</div>
       </div>
 
       <div class="stats" id="stats">
@@ -71,9 +80,13 @@ export function renderDashboard(
           <span class="stat-label">Streak</span>
         </div>
         <div class="stat">
-          <span class="stat-value" id="stat-total">${state.progress.xp}</span>
-          <span class="stat-label">Total XP</span>
+          <span class="stat-value" id="stat-total">${state.progress.totalCompletions}</span>
+          <span class="stat-label">Total</span>
         </div>
+      </div>
+
+      <div id="achievements-container">
+        ${renderAchievementsGrid(state)}
       </div>
 
       <div class="next-reminder" id="next-reminder">
@@ -82,6 +95,9 @@ export function renderDashboard(
     </div>
   `
 
+  const shrimpEl = document.getElementById('shrimp-character')
+  if (shrimpEl) updateShrimp(shrimpEl, condition)
+
   document.getElementById('settings-btn')!.addEventListener('click', handlers.onOpenSettings)
 
   const enableBtn = document.getElementById('btn-enable-notif')
@@ -89,7 +105,6 @@ export function renderDashboard(
     enableBtn.addEventListener('click', handlers.onEnableNotifications)
   }
 
-  // Update countdown periodically
   if (countdownInterval) clearInterval(countdownInterval)
   countdownInterval = setInterval(() => {
     const el = document.getElementById('countdown')
@@ -98,7 +113,6 @@ export function renderDashboard(
     }
   }, 5000)
 
-  // Initial countdown update
   setTimeout(() => {
     const el = document.getElementById('countdown')
     if (el && timer.isRunning()) {
@@ -147,7 +161,6 @@ export function renderOverlay(
     })
   })
 
-  // Animate in
   requestAnimationFrame(() => overlay.classList.add('visible'))
 }
 
@@ -160,8 +173,6 @@ export function hideOverlay(): void {
 }
 
 export function updateStats(state: ShrimperState): void {
-  const { percent } = getXpProgress(state.progress.xp, state.progress.level)
-
   const today = document.getElementById('stat-today')
   if (today) today.textContent = String(state.progress.completionsToday)
 
@@ -169,52 +180,19 @@ export function updateStats(state: ShrimperState): void {
   if (streak) streak.textContent = String(state.progress.streak)
 
   const total = document.getElementById('stat-total')
-  if (total) total.textContent = String(state.progress.xp)
+  if (total) total.textContent = String(state.progress.totalCompletions)
 
-  const xpBar = document.querySelector<HTMLDivElement>('.xp-bar')
-  if (xpBar) xpBar.style.width = `${percent}%`
+  const bar = document.querySelector<HTMLDivElement>('.condition-bar')
+  if (bar) bar.style.width = `${state.progress.condition}%`
 
-  const xpLabel = document.querySelector('.xp-label')
-  if (xpLabel) xpLabel.textContent = `Level ${state.progress.level} — ${state.progress.xp} XP`
+  const label = document.querySelector('.condition-label')
+  if (label) label.textContent = `Posture ${state.progress.condition}%`
 
-  const levelLabel = document.querySelector('.level-label')
-  if (levelLabel) levelLabel.textContent = getLevelName(state.progress.level)
-}
+  const grid = document.getElementById('achievements-container')
+  if (grid) grid.innerHTML = renderAchievementsGrid(state)
 
-export function updateCharacterMood(state: ShrimperState): void {
-  const character = document.getElementById('shrimp-character')
-  if (character) {
-    const mood = getMoodFromBehavior(state.progress.consecutiveIgnored)
-    const stage = Math.min(state.progress.level, 5) as Stage
-    character.innerHTML = renderShrimp(stage, mood)
-  }
-}
-
-export function showLevelUp(level: number): void {
-  const levelName = getLevelName(level)
-  const stage = Math.min(level, 5) as Stage
-  const shrimpSvg = renderShrimp(stage, 'happy')
-
-  const overlay = document.createElement('div')
-  overlay.id = 'levelup-overlay'
-  overlay.className = 'overlay levelup-overlay'
-  overlay.innerHTML = `
-    <div class="overlay-content levelup-content">
-      <div class="levelup-character">${shrimpSvg}</div>
-      <h2 class="levelup-title">Level Up! 🎉</h2>
-      <p class="levelup-name">${levelName}</p>
-      <p class="levelup-message">Your shrimp evolved!</p>
-      <button class="btn btn-primary" id="btn-levelup-close">Amazing!</button>
-    </div>
-  `
-
-  document.body.appendChild(overlay)
-  requestAnimationFrame(() => overlay.classList.add('visible'))
-
-  document.getElementById('btn-levelup-close')!.addEventListener('click', () => {
-    overlay.classList.remove('visible')
-    setTimeout(() => overlay.remove(), 300)
-  })
+  const shrimpEl = document.getElementById('shrimp-character')
+  if (shrimpEl) updateShrimp(shrimpEl, state.progress.condition)
 }
 
 export function renderSettings(
@@ -283,7 +261,7 @@ export function renderSettings(
   document.getElementById('btn-cancel-settings')!.addEventListener('click', () => hideSettings())
 
   document.getElementById('btn-reset')!.addEventListener('click', () => {
-    if (confirm('Reset all progress? Your XP and level will be lost. This cannot be undone.')) {
+    if (confirm('Reset all progress? Your condition, streak, and achievements will be lost. This cannot be undone.')) {
       onReset()
     }
   })
@@ -301,9 +279,9 @@ export function renderOnboarding(onComplete: (min: number, max: number) => void)
   const app = document.querySelector<HTMLDivElement>('#app')!
   app.innerHTML = `
     <div class="onboarding">
-      <div class="onboarding-character">${renderShrimp(1, 'happy')}</div>
+      <div class="onboarding-character" id="onboarding-character">${renderShrimp()}</div>
       <h1>Welcome to Shrimper!</h1>
-      <p>I'll remind you to sit straight, stretch, and take breaks.<br>Help me evolve from a sad shrimp to a champion!</p>
+      <p>I'll remind you to sit straight, stretch, and take breaks.<br>Help me straighten up — your care shows in my posture!</p>
 
       <div class="onboarding-settings">
         <div class="setting-group">
@@ -318,6 +296,9 @@ export function renderOnboarding(onComplete: (min: number, max: number) => void)
       <button class="btn btn-primary btn-large" id="btn-start">Let's Go! 🦐</button>
     </div>
   `
+
+  const onboardChar = document.getElementById('onboarding-character')
+  if (onboardChar) updateShrimp(onboardChar, 80)
 
   const minSlider = document.getElementById('onboard-min') as HTMLInputElement
   const maxSlider = document.getElementById('onboard-max') as HTMLInputElement

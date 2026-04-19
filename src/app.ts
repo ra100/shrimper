@@ -1,16 +1,18 @@
-import { loadState, saveState, isFirstRun, addXp, recordIgnored, getXpForCompletion, resetProgress, type ShrimperState } from './state'
+import { loadState, saveState, isFirstRun, recordCompletion, recordIgnored, recordSnooze, resetProgress, type ShrimperState } from './state'
 import { createTimer, type ReminderTimer } from './timer'
 import { createEscalation, escalateOnIgnore, deescalateOnComplete, type EscalationState } from './escalation'
-import { getRandomTip } from './tips'
-import { renderDashboard, renderOverlay, renderOnboarding, renderSettings, hideOverlay, hideSettings, updateStats, updateCharacterMood, showLevelUp } from './ui'
+import { getRandomTip, getQuipForTip } from './tips'
+import { renderDashboard, renderOverlay, renderOnboarding, renderSettings, hideOverlay, hideSettings, updateStats } from './ui'
+import { flashShrimp } from './characters/shrimp'
+import { celebrate } from './achievements'
 import { startTitleFlash, stopTitleFlash } from './tab-indicator'
 import { requestPermission, showNotification, getPermissionState } from './notifications'
-import { getQuipForTip } from './tips'
 
 let state: ShrimperState
 let escalation: EscalationState
 let timer: ReminderTimer
 let snoozeCount = 0
+let hadSnooze = false
 const MAX_SNOOZES = 2
 
 export function initApp(): void {
@@ -46,7 +48,6 @@ async function startDashboard(): Promise<void> {
     onEnableNotifications: handleEnableNotifications,
   })
 
-  // Request permission if not yet decided
   const perm = getPermissionState()
   if (perm === 'default') {
     await requestPermission()
@@ -58,6 +59,7 @@ async function startDashboard(): Promise<void> {
 
 function handleReminder(): void {
   snoozeCount = 0
+  hadSnooze = false
   const tip = getRandomTip()
 
   showNotification(`${tip.emoji} ${tip.text}`, getQuipForTip(tip))
@@ -74,26 +76,36 @@ function handleReminder(): void {
   })
 }
 
+function getShrimpEl(): HTMLElement | null {
+  return document.getElementById('shrimp-character')
+}
+
 function handleComplete(): void {
   stopTitleFlash()
-  const prevLevel = state.progress.level
-  const xpGain = getXpForCompletion(state.progress.streak)
-  state = addXp(state, xpGain)
+  const result = recordCompletion(state, hadSnooze)
+  state = result.state
   escalation = deescalateOnComplete(escalation, state.settings.maxInterval)
   saveState(state)
   hideOverlay()
   updateStats(state)
-  updateCharacterMood(state)
 
-  if (state.progress.level > prevLevel) {
-    showLevelUp(state.progress.level)
+  const shrimpEl = getShrimpEl()
+  if (shrimpEl) flashShrimp(shrimpEl, 'bounce')
+
+  if (result.unlocked.length > 0) {
+    celebrate(result.unlocked)
   }
+
+  hadSnooze = false
+  snoozeCount = 0
   timer.scheduleNext()
 }
 
 function handleSnooze(minutes: number): void {
   stopTitleFlash()
   snoozeCount++
+  hadSnooze = true
+  state = recordSnooze(state)
   if (snoozeCount >= MAX_SNOOZES) {
     handleDismiss()
     return
@@ -109,7 +121,11 @@ function handleDismiss(): void {
   saveState(state)
   hideOverlay()
   updateStats(state)
-  updateCharacterMood(state)
+
+  const shrimpEl = getShrimpEl()
+  if (shrimpEl) flashShrimp(shrimpEl, 'deflate')
+
+  hadSnooze = false
   timer.scheduleNext()
 }
 
@@ -148,5 +164,4 @@ function handleResetProgress(): void {
   saveState(state)
   hideSettings()
   updateStats(state)
-  updateCharacterMood(state)
 }

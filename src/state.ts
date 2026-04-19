@@ -3,57 +3,84 @@ export interface ShrimperSettings {
   maxInterval: number // minutes
 }
 
+export type AchievementId =
+  | 'firstStretch'
+  | 'threeInRow'
+  | 'streak7'
+  | 'streak30'
+  | 'total100'
+  | 'peakCondition'
+
+export type Achievements = Record<AchievementId, string | null>
+
 export interface ShrimperProgress {
-  xp: number
-  level: number
+  condition: number // 0..100
+  totalCompletions: number
   completionsToday: number
   streak: number
-  lastCompletionDate: string // ISO date string (YYYY-MM-DD)
-  consecutiveIgnored: number
+  lastCompletionDate: string // YYYY-MM-DD or ""
+  completionsInRow: number
+  achievements: Achievements
 }
 
 export interface ShrimperState {
+  version: 2
   settings: ShrimperSettings
   progress: ShrimperProgress
 }
 
 const STORAGE_KEY = 'shrimper-state'
+const SCHEMA_VERSION = 2 as const
 
 const DEFAULT_SETTINGS: ShrimperSettings = {
   minInterval: 15,
   maxInterval: 45,
 }
 
+const DEFAULT_ACHIEVEMENTS: Achievements = {
+  firstStretch: null,
+  threeInRow: null,
+  streak7: null,
+  streak30: null,
+  total100: null,
+  peakCondition: null,
+}
+
 const DEFAULT_PROGRESS: ShrimperProgress = {
-  xp: 0,
-  level: 1,
+  condition: 50,
+  totalCompletions: 0,
   completionsToday: 0,
   streak: 0,
   lastCompletionDate: '',
-  consecutiveIgnored: 0,
+  completionsInRow: 0,
+  achievements: { ...DEFAULT_ACHIEVEMENTS },
 }
 
-export const XP_THRESHOLDS = [0, 50, 150, 400, 1000]
-export const STREAK_BONUS_PER = 2
-export const STREAK_BONUS_CAP = 10
-export const BASE_XP = 10
+function freshState(): ShrimperState {
+  return {
+    version: SCHEMA_VERSION,
+    settings: { ...DEFAULT_SETTINGS },
+    progress: { ...DEFAULT_PROGRESS, achievements: { ...DEFAULT_ACHIEVEMENTS } },
+  }
+}
 
 export function loadState(): ShrimperState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw)
-      return {
-        settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
-        progress: { ...DEFAULT_PROGRESS, ...parsed.progress },
-      }
+    if (!raw) return freshState()
+    const parsed = JSON.parse(raw)
+    if (parsed?.version !== SCHEMA_VERSION) return freshState()
+    return {
+      version: SCHEMA_VERSION,
+      settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
+      progress: {
+        ...DEFAULT_PROGRESS,
+        ...parsed.progress,
+        achievements: { ...DEFAULT_ACHIEVEMENTS, ...(parsed.progress?.achievements ?? {}) },
+      },
     }
   } catch {
-    // corrupted data — start fresh
-  }
-  return {
-    settings: { ...DEFAULT_SETTINGS },
-    progress: { ...DEFAULT_PROGRESS },
+    return freshState()
   }
 }
 
@@ -68,39 +95,86 @@ export function isFirstRun(): boolean {
 export function resetProgress(state: ShrimperState): ShrimperState {
   return {
     ...state,
-    progress: { ...DEFAULT_PROGRESS },
+    version: SCHEMA_VERSION,
+    progress: { ...DEFAULT_PROGRESS, achievements: { ...DEFAULT_ACHIEVEMENTS } },
   }
 }
 
-export function computeLevel(xp: number): number {
-  for (let i = XP_THRESHOLDS.length - 1; i >= 0; i--) {
-    if (xp >= XP_THRESHOLDS[i]) return i + 1
-  }
-  return 1
+function clamp(n: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, n))
 }
 
 function todayString(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
-export function addXp(state: ShrimperState, amount: number): ShrimperState {
-  const today = todayString()
-  const isNewDay = state.progress.lastCompletionDate !== today
+function yesterdayString(): string {
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  return d.toISOString().slice(0, 10)
+}
 
-  const newXp = state.progress.xp + amount
-  const newLevel = computeLevel(newXp)
+function checkAchievements(progress: ShrimperProgress): AchievementId[] {
+  const today = todayString()
+  const unlocked: AchievementId[] = []
+  const a = progress.achievements
+
+  const triggers: Array<[AchievementId, boolean]> = [
+    ['firstStretch', progress.totalCompletions === 1],
+    ['threeInRow', progress.completionsInRow === 3],
+    ['streak7', progress.streak === 7],
+    ['streak30', progress.streak === 30],
+    ['total100', progress.totalCompletions === 100],
+    ['peakCondition', progress.condition === 100],
+  ]
+
+  for (const [id, hit] of triggers) {
+    if (hit && a[id] === null) {
+      a[id] = today
+      unlocked.push(id)
+    }
+  }
+  return unlocked
+}
+
+export function recordCompletion(
+  state: ShrimperState,
+  wasSnoozed: boolean,
+): { state: ShrimperState; unlocked: AchievementId[] } {
+  const delta = wasSnoozed ? 1 : 3
+  const today = todayString()
+  const yesterday = yesterdayString()
+  const prev = state.progress
+
+  let streak: number
+  let completionsToday: number
+  if (prev.lastCompletionDate === today) {
+    streak = prev.streak
+    completionsToday = prev.completionsToday + 1
+  } else if (prev.lastCompletionDate === yesterday) {
+    streak = prev.streak + 1
+    completionsToday = 1
+  } else {
+    streak = 1
+    completionsToday = 1
+  }
+
+  const nextProgress: ShrimperProgress = {
+    ...prev,
+    condition: clamp(prev.condition + delta, 0, 100),
+    totalCompletions: prev.totalCompletions + 1,
+    completionsInRow: prev.completionsInRow + 1,
+    completionsToday,
+    streak,
+    lastCompletionDate: today,
+    achievements: { ...prev.achievements },
+  }
+
+  const unlocked = checkAchievements(nextProgress)
 
   return {
-    ...state,
-    progress: {
-      ...state.progress,
-      xp: newXp,
-      level: newLevel,
-      completionsToday: isNewDay ? 1 : state.progress.completionsToday + 1,
-      streak: state.progress.streak + 1,
-      lastCompletionDate: today,
-      consecutiveIgnored: 0,
-    },
+    state: { ...state, progress: nextProgress },
+    unlocked,
   }
 }
 
@@ -109,13 +183,12 @@ export function recordIgnored(state: ShrimperState): ShrimperState {
     ...state,
     progress: {
       ...state.progress,
-      streak: 0,
-      consecutiveIgnored: state.progress.consecutiveIgnored + 1,
+      condition: clamp(state.progress.condition - 4, 0, 100),
+      completionsInRow: 0,
     },
   }
 }
 
-export function getXpForCompletion(streak: number): number {
-  const bonus = Math.min(streak * STREAK_BONUS_PER, STREAK_BONUS_CAP)
-  return BASE_XP + bonus
+export function recordSnooze(state: ShrimperState): ShrimperState {
+  return state
 }
