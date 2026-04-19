@@ -140,23 +140,23 @@ body {
 }
 
 .shrimp .tail {
-  transform-origin: 170px 110px;
-  transform: rotate(calc(var(--curl) * 25deg));
+  transform-origin: 204px 118px;
+  transform: rotate(calc(var(--curl) * 28deg));
 }
 
 .shrimp .legs {
-  transform-origin: 100px 148px;
-  transform: rotate(calc(var(--curl) * 8deg));
+  transform-origin: 90px 156px;
+  transform: rotate(calc(var(--curl) * 10deg));
 }
 
 .shrimp .eye {
   transition: transform 600ms ease;
-  transform-origin: 63px 93px;
+  transform-origin: 55px 110px;
   transform: translateY(calc(var(--curl) * 3px)) scaleY(calc(0.6 + var(--c) * 0.4));
 }
 
 .shrimp .eyelid {
-  transform-origin: 62px 83px;
+  transform-origin: 55px 98px;
   transform: scaleY(0);
   animation: blink 6s infinite;
 }
