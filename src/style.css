@@ -129,41 +129,50 @@ body {
 }
 
 .shrimp .body {
-  transform-origin: 60px 95px;
+  transform-origin: 60px 100px;
   animation: breathe 3s ease-in-out infinite;
 }
 
-.shrimp .segment,
-.shrimp .tail {
+.shrimp .main-body,
+.shrimp .tail,
+.shrimp .rostrum,
+.shrimp .pereopods,
+.shrimp .pleopods {
   transition: transform 600ms ease;
 }
 
-.shrimp .segment.s1 { transform-origin: 60px 95px; transform: rotate(calc(var(--curl) * 0deg)); }
-.shrimp .segment.s2 { transform-origin: 80px 110px; transform: rotate(calc(var(--curl) * 12deg)); }
-.shrimp .segment.s3 { transform-origin: 100px 118px; transform: rotate(calc(var(--curl) * 20deg)); }
-.shrimp .segment.s4 { transform-origin: 120px 124px; transform: rotate(calc(var(--curl) * 28deg)); }
-.shrimp .tail { transform-origin: 140px 128px; transform: rotate(calc(var(--curl) * 38deg)); }
+/* The body is a single crescent path — curl effect comes from tail
+   rotation (follows tip of body) plus subtle squash to simulate ball-curl. */
+.shrimp .tail {
+  transform-origin: 180px 66px;
+  transform: rotate(calc(var(--curl) * 45deg));
+}
 
-.shrimp .legs {
-  transition: transform 600ms ease;
-  transform-origin: 94px 130px;
+.shrimp .pereopods {
+  transform-origin: 88px 180px;
+  transform: rotate(calc(var(--curl) * 10deg));
+}
+
+.shrimp .pleopods {
+  transform-origin: 132px 172px;
   transform: rotate(calc(var(--curl) * 14deg));
 }
 
 .shrimp .eye {
   transition: transform 600ms ease;
-  transform-origin: 57px 89px;
+  transform-origin: 79px 149px;
   transform: translateY(calc(var(--curl) * 3px)) scaleY(calc(0.6 + var(--c) * 0.4));
 }
 
 .shrimp .eyelid {
-  transform-origin: 56px 82px;
+  transform-origin: 77px 137px;
   transform: scaleY(0);
   animation: blink 6s infinite;
 }
 
-.shrimp .eye.right .eyelid {
-  animation-delay: 0.3s;
+.shrimp .blush {
+  transition: opacity 600ms ease;
+  opacity: calc(var(--c) * 0.5);
 }
 
 .shrimp .mouth {
@@ -175,25 +184,28 @@ body {
 
 .shrimp .antennae {
   transition: transform 600ms ease;
-  transform-origin: 52px 75px;
-  transform: rotate(calc(var(--curl) * -10deg));
+  transform-origin: 52px 80px;
+  transform: rotate(calc(var(--curl) * -8deg));
 }
 
-.shrimp .antenna {
-  transition: transform 600ms ease;
+.shrimp .antenna.long-1 {
+  transform-origin: 52px 88px;
+  animation: antenna-sway-a 4.5s ease-in-out infinite;
 }
 
-.shrimp .antenna.long-1,
 .shrimp .antenna.long-2 {
-  transform-origin: 56px 70px;
-  animation: antenna-sway 4s ease-in-out infinite;
+  transform-origin: 50px 84px;
+  animation: antenna-sway-b 5s ease-in-out infinite;
 }
 
-.shrimp .antenna.long-2 { animation-delay: 0.8s; }
-
-@keyframes antenna-sway {
+@keyframes antenna-sway-a {
   0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(2deg); }
+  50% { transform: rotate(3deg); }
+}
+
+@keyframes antenna-sway-b {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-3deg); }
 }
 
 @keyframes breathe {

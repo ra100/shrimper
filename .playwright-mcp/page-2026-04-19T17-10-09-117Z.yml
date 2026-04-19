@@ -1,0 +1,12 @@
+- generic [ref=e3]:
+  - img "Shrimp character" [ref=e5]
+  - heading "Welcome to Shrimper!" [level=1] [ref=e45]
+  - paragraph [ref=e46]:
+    - text: I'll remind you to sit straight, stretch, and take breaks.
+    - text: Help me straighten up — your care shows in my posture!
+  - generic [ref=e48]:
+    - generic [ref=e49]: Remind me every 15 to 45 minutes
+    - generic [ref=e50]:
+      - slider [ref=e51]: "15"
+      - slider [ref=e52]: "45"
+  - button "Let's Go! 🦐" [ref=e53] [cursor=pointer]
