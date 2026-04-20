@@ -20,7 +20,7 @@ import {
 } from './state'
 import { startTitleFlash, stopTitleFlash } from './tab-indicator'
 import { createTimer, type ReminderTimer } from './timer'
-import { getQuipForTip, getRandomTip } from './tips'
+import { getQuipForTip, getRandomTip, getTipById, type Tip } from './tips'
 import {
   hideOverlay,
   hideSettings,
@@ -80,16 +80,47 @@ async function startDashboard(): Promise<void> {
     updateNotificationBanner()
   }
 
-  if (!state.settings.paused) {
+  if (state.settings.paused) return
+
+  // Resume pending reminder shown before reload
+  if (state.pendingReminder) {
+    const tip = getTipById(state.pendingReminder.tipId)
+    if (tip) {
+      showReminderOverlay(tip, { notify: false, flashTitle: false })
+      return
+    }
+    state.pendingReminder = null
+  }
+
+  // Resume timer countdown from persisted target, or schedule fresh
+  if (state.nextFireTime > 0 && state.nextFireTime > Date.now()) {
+    timer.resumeAt(state.nextFireTime)
+  } else {
     timer.start()
-    showFirstReminder()
+    persistSchedule()
   }
 }
 
-function showFirstReminder(): void {
+function persistSchedule(): void {
+  state.nextFireTime = timer.getNextFireTime()
+  saveState(state)
+}
+
+function showReminderOverlay(tip: Tip, opts: { notify: boolean; flashTitle: boolean }): void {
   snoozeCount = 0
   hadSnooze = false
-  const tip = getRandomTip()
+
+  if (opts.notify) showNotification(`${tip.emoji} ${tip.text}`, getQuipForTip(tip))
+
+  if (opts.flashTitle && !document.hasFocus()) {
+    startTitleFlash(`${tip.emoji} ${tip.text}`)
+    window.addEventListener('focus', () => stopTitleFlash(), { once: true })
+  }
+
+  state.pendingReminder = { tipId: tip.id, firedAt: Date.now() }
+  state.nextFireTime = 0
+  saveState(state)
+
   renderOverlay(tip, state, {
     onComplete: () => handleComplete(),
     onSnooze: (minutes: number) => handleSnooze(minutes),
@@ -103,22 +134,8 @@ function handleTestNotification(): void {
 }
 
 function handleReminder(): void {
-  snoozeCount = 0
-  hadSnooze = false
   const tip = getRandomTip()
-
-  showNotification(`${tip.emoji} ${tip.text}`, getQuipForTip(tip))
-
-  if (!document.hasFocus()) {
-    startTitleFlash(`${tip.emoji} ${tip.text}`)
-    window.addEventListener('focus', () => stopTitleFlash(), { once: true })
-  }
-
-  renderOverlay(tip, state, {
-    onComplete: () => handleComplete(),
-    onSnooze: (minutes: number) => handleSnooze(minutes),
-    onDismiss: () => handleDismiss(),
-  })
+  showReminderOverlay(tip, { notify: true, flashTitle: true })
 }
 
 function getShrimpEl(): HTMLElement | null {
@@ -129,8 +146,8 @@ function handleComplete(): void {
   stopTitleFlash()
   const result = recordCompletion(state, hadSnooze)
   state = result.state
+  state.pendingReminder = null
   escalation = deescalateOnComplete(escalation, state.settings.maxInterval)
-  saveState(state)
   hideOverlay()
   updateStats(state)
 
@@ -144,6 +161,7 @@ function handleComplete(): void {
   hadSnooze = false
   snoozeCount = 0
   timer.scheduleNext()
+  persistSchedule()
 }
 
 function handleSnooze(minutes: number): void {
@@ -155,15 +173,17 @@ function handleSnooze(minutes: number): void {
     handleDismiss()
     return
   }
+  state.pendingReminder = null
   hideOverlay()
   timer.snooze(minutes)
+  persistSchedule()
 }
 
 function handleDismiss(): void {
   stopTitleFlash()
   state = recordIgnored(state)
+  state.pendingReminder = null
   escalation = escalateOnIgnore(escalation, state.settings.minInterval)
-  saveState(state)
   hideOverlay()
   updateStats(state)
 
@@ -172,6 +192,7 @@ function handleDismiss(): void {
 
   hadSnooze = false
   timer.scheduleNext()
+  persistSchedule()
 }
 
 async function handleEnableNotifications(): Promise<void> {
@@ -201,12 +222,14 @@ function updateNotificationBanner(): void {
 
 function handlePauseToggle(): void {
   state = togglePaused(state)
-  saveState(state)
   if (state.settings.paused) {
     timer.stop()
+    state.nextFireTime = 0
   } else {
     timer.start()
+    state.nextFireTime = timer.getNextFireTime()
   }
+  saveState(state)
   updatePauseButton(state.settings.paused)
 }
 

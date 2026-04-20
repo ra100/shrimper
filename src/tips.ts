@@ -92,3 +92,7 @@ export function getRandomTip(): Tip {
 export function getQuipForTip(tip: Tip): string {
   return tip.quips[Math.floor(Math.random() * tip.quips.length)]
 }
+
+export function getTipById(id: string): Tip | null {
+  return TIPS.find((t) => t.id === id) ?? null
+}

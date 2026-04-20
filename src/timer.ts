@@ -5,6 +5,7 @@ export interface ReminderTimer {
   stop: () => void
   snooze: (minutes: number) => void
   scheduleNext: () => void
+  resumeAt: (nextFireTime: number) => void
   isRunning: () => boolean
   getNextFireTime: () => number
 }
@@ -57,11 +58,22 @@ export function createTimer(
     running = true
   }
 
+  function resumeAt(target: number) {
+    stop()
+    const delay = Math.max(0, target - Date.now())
+    nextFireTime = target
+    timeoutId = setTimeout(() => {
+      onReminder()
+    }, delay)
+    running = true
+  }
+
   return {
     start,
     stop,
     snooze,
     scheduleNext,
+    resumeAt,
     isRunning: () => running,
     getNextFireTime: () => nextFireTime,
   }

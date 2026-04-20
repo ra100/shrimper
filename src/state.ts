@@ -24,10 +24,17 @@ export interface ShrimperProgress {
   achievements: Achievements
 }
 
+export interface PendingReminder {
+  tipId: string
+  firedAt: number
+}
+
 export interface ShrimperState {
   version: 2
   settings: ShrimperSettings
   progress: ShrimperProgress
+  pendingReminder: PendingReminder | null
+  nextFireTime: number
 }
 
 const STORAGE_KEY = 'shrimper-state'
@@ -63,6 +70,8 @@ function freshState(): ShrimperState {
     version: SCHEMA_VERSION,
     settings: { ...DEFAULT_SETTINGS },
     progress: { ...DEFAULT_PROGRESS, achievements: { ...DEFAULT_ACHIEVEMENTS } },
+    pendingReminder: null,
+    nextFireTime: 0,
   }
 }
 
@@ -80,6 +89,8 @@ export function loadState(): ShrimperState {
         ...parsed.progress,
         achievements: { ...DEFAULT_ACHIEVEMENTS, ...(parsed.progress?.achievements ?? {}) },
       },
+      pendingReminder: parsed.pendingReminder ?? null,
+      nextFireTime: parsed.nextFireTime ?? 0,
     }
   } catch {
     return freshState()
@@ -99,6 +110,8 @@ export function resetProgress(state: ShrimperState): ShrimperState {
     ...state,
     version: SCHEMA_VERSION,
     progress: { ...DEFAULT_PROGRESS, achievements: { ...DEFAULT_ACHIEVEMENTS } },
+    pendingReminder: null,
+    nextFireTime: 0,
   }
 }
 
