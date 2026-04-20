@@ -13,15 +13,18 @@ Posture & health reminder app with gamification. Reminds you to sit straight, st
 ### Setup
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### Commands
 
 ```bash
-npm run dev      # Start dev server (http://localhost:5173/shrimper/)
-npm run build    # Type-check + production build
-npm run preview  # Preview production build
+pnpm dev         # Start dev server (http://localhost:5173/shrimper/)
+pnpm build       # Type-check + production build
+pnpm preview     # Preview production build
+pnpm check       # Biome lint + format (writes)
+pnpm lint        # Biome lint only
+pnpm knip        # Detect dead code + unused deps
 ```
 
 ## Architecture

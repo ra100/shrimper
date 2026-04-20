@@ -38,10 +38,12 @@ A fun posture & health reminder app that nags you (lovingly) to sit straight, st
 ## Development
 
 ```bash
-npm install
-npm run dev      # http://localhost:5173/shrimper/
-npm run build    # Type-check + production build
-npm run preview  # Preview production build
+pnpm install
+pnpm dev         # http://localhost:5173/shrimper/
+pnpm build       # Type-check + production build
+pnpm preview     # Preview production build
+pnpm check       # Biome lint + format
+pnpm knip        # Dead code / unused deps
 ```
 
 ## Deploy
