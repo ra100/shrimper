@@ -413,6 +413,36 @@ body {
   color: var(--bg, white);
 }
 
+.notif-help {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--text-muted, #666);
+  text-align: left;
+}
+
+.notif-help summary {
+  cursor: pointer;
+  padding: 6px 0;
+  user-select: none;
+}
+
+.notif-help summary:hover {
+  color: var(--text);
+}
+
+.notif-help-body {
+  padding: 8px 0 4px;
+  line-height: 1.5;
+}
+
+.notif-help-body p {
+  margin: 6px 0;
+}
+
+.notif-help-body strong {
+  color: var(--text);
+}
+
 .btn-large {
   font-size: 1.2rem;
   padding: 16px 32px;
