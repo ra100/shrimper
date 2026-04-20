@@ -1,4 +1,4 @@
-export type TimerCallback = () => void
+type TimerCallback = () => void
 
 export interface ReminderTimer {
   start: () => void

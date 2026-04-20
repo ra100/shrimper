@@ -1,4 +1,4 @@
-const ORIGINAL_TITLE = 'Shrimper — Don\'t Be a Shrimp!'
+const ORIGINAL_TITLE = "Shrimper — Don't Be a Shrimp!"
 let flashInterval: ReturnType<typeof setInterval> | null = null
 let isFlashing = false
 

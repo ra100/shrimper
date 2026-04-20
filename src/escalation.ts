@@ -17,20 +17,14 @@ export function createEscalation(_userMin: number, userMax: number): EscalationS
   return { effectiveMax: userMax }
 }
 
-export function escalateOnIgnore(
-  state: EscalationState,
-  userMin: number,
-): EscalationState {
+export function escalateOnIgnore(state: EscalationState, userMin: number): EscalationState {
   const gap = state.effectiveMax - userMin
   const reduction = gap * 0.25
   const newMax = Math.max(userMin, state.effectiveMax - reduction)
   return { effectiveMax: Math.round(newMax * 10) / 10 }
 }
 
-export function deescalateOnComplete(
-  state: EscalationState,
-  userMax: number,
-): EscalationState {
+export function deescalateOnComplete(state: EscalationState, userMax: number): EscalationState {
   const gap = userMax - state.effectiveMax
   const restoration = gap * 0.1
   const newMax = Math.min(userMax, state.effectiveMax + restoration)

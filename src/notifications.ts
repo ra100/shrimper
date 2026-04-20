@@ -1,4 +1,4 @@
-export type PermissionState = 'granted' | 'denied' | 'default' | 'unsupported'
+type PermissionState = 'granted' | 'denied' | 'default' | 'unsupported'
 
 export function getPermissionState(): PermissionState {
   if (!('Notification' in window)) return 'unsupported'

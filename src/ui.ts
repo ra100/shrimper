@@ -1,17 +1,28 @@
-import { type ShrimperState } from './state'
-import { type ReminderTimer, getApproxTimeRemaining } from './timer'
-import { type Tip } from './tips'
-import { renderShrimp, updateShrimp } from './characters/shrimp'
-import { getQuipForTip } from './tips'
-import { getPermissionState } from './notifications'
 import { ACHIEVEMENT_META, ACHIEVEMENT_ORDER } from './achievements'
+import { renderShrimp, updateShrimp } from './characters/shrimp'
+import { getPermissionState } from './notifications'
+import type { ShrimperState } from './state'
+import { getApproxTimeRemaining, type ReminderTimer } from './timer'
+import { getQuipForTip, type Tip } from './tips'
 
 let countdownInterval: ReturnType<typeof setInterval> | null = null
+
+function byId<T extends HTMLElement = HTMLElement>(id: string): T {
+  const el = document.getElementById(id)
+  if (!el) throw new Error(`Missing element #${id}`)
+  return el as T
+}
+
+function qs<T extends HTMLElement>(selector: string): T {
+  const el = document.querySelector<T>(selector)
+  if (!el) throw new Error(`Missing element ${selector}`)
+  return el
+}
 
 function renderAchievementsGrid(state: ShrimperState): string {
   return `
     <div class="achievements-grid">
-      ${ACHIEVEMENT_ORDER.map(id => {
+      ${ACHIEVEMENT_ORDER.map((id) => {
         const meta = ACHIEVEMENT_META[id]
         const unlockedAt = state.progress.achievements[id]
         if (unlockedAt) {
@@ -37,9 +48,13 @@ function renderAchievementsGrid(state: ShrimperState): string {
 export function renderDashboard(
   state: ShrimperState,
   timer: ReminderTimer,
-  handlers: { onOpenSettings: () => void; onEnableNotifications: () => void; onTogglePause: () => void },
+  handlers: {
+    onOpenSettings: () => void
+    onEnableNotifications: () => void
+    onTogglePause: () => void
+  },
 ): void {
-  const app = document.querySelector<HTMLDivElement>('#app')!
+  const app = qs<HTMLDivElement>('#app')
   const condition = state.progress.condition
 
   const notifPerm = getPermissionState()
@@ -49,13 +64,19 @@ export function renderDashboard(
     <div class="dashboard">
       <button class="settings-btn" id="settings-btn" aria-label="Settings">⚙️</button>
 
-      ${showBanner ? `
+      ${
+        showBanner
+          ? `
         <div class="notification-banner ${notifPerm === 'denied' ? 'banner-denied' : 'banner-prompt'}" id="notification-banner">
-          ${notifPerm === 'denied'
-            ? '🔕 Notifications blocked — enable in browser settings for reminders outside this tab'
-            : '<button class="btn-enable-notif" id="btn-enable-notif">🔔 Enable notifications to get reminders in other apps</button>'}
+          ${
+            notifPerm === 'denied'
+              ? '🔕 Notifications blocked — enable in browser settings for reminders outside this tab'
+              : '<button class="btn-enable-notif" id="btn-enable-notif">🔔 Enable notifications to get reminders in other apps</button>'
+          }
         </div>
-      ` : ''}
+      `
+          : ''
+      }
 
       <div class="character-area">
         <div class="shrimp-character" id="shrimp-character">
@@ -99,8 +120,8 @@ export function renderDashboard(
   const shrimpEl = document.getElementById('shrimp-character')
   if (shrimpEl) updateShrimp(shrimpEl, condition)
 
-  document.getElementById('settings-btn')!.addEventListener('click', handlers.onOpenSettings)
-  document.getElementById('btn-pause')!.addEventListener('click', handlers.onTogglePause)
+  byId('settings-btn').addEventListener('click', handlers.onOpenSettings)
+  byId('btn-pause').addEventListener('click', handlers.onTogglePause)
 
   const enableBtn = document.getElementById('btn-enable-notif')
   if (enableBtn) {
@@ -150,11 +171,11 @@ export function renderOverlay(
 
   document.body.appendChild(overlay)
 
-  document.getElementById('btn-complete')!.addEventListener('click', handlers.onComplete)
-  document.getElementById('btn-dismiss')!.addEventListener('click', handlers.onDismiss)
-  overlay.querySelectorAll('.btn-snooze').forEach(btn => {
+  byId('btn-complete').addEventListener('click', handlers.onComplete)
+  byId('btn-dismiss').addEventListener('click', handlers.onDismiss)
+  overlay.querySelectorAll('.btn-snooze').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const minutes = parseInt((btn as HTMLElement).dataset.minutes || '10')
+      const minutes = parseInt((btn as HTMLElement).dataset.minutes || '10', 10)
       handlers.onSnooze(minutes)
     })
   })
@@ -231,14 +252,14 @@ export function renderSettings(
   document.body.appendChild(panel)
   requestAnimationFrame(() => panel.classList.add('visible'))
 
-  const minSlider = document.getElementById('min-slider') as HTMLInputElement
-  const maxSlider = document.getElementById('max-slider') as HTMLInputElement
-  const minVal = document.getElementById('min-val')!
-  const maxVal = document.getElementById('max-val')!
+  const minSlider = byId<HTMLInputElement>('min-slider')
+  const maxSlider = byId<HTMLInputElement>('max-slider')
+  const minVal = byId('min-val')
+  const maxVal = byId('max-val')
 
   minSlider.addEventListener('input', () => {
     minVal.textContent = minSlider.value
-    if (parseInt(minSlider.value) > parseInt(maxSlider.value)) {
+    if (parseInt(minSlider.value, 10) > parseInt(maxSlider.value, 10)) {
       maxSlider.value = minSlider.value
       maxVal.textContent = minSlider.value
     }
@@ -246,20 +267,24 @@ export function renderSettings(
 
   maxSlider.addEventListener('input', () => {
     maxVal.textContent = maxSlider.value
-    if (parseInt(maxSlider.value) < parseInt(minSlider.value)) {
+    if (parseInt(maxSlider.value, 10) < parseInt(minSlider.value, 10)) {
       minSlider.value = maxSlider.value
       minVal.textContent = maxSlider.value
     }
   })
 
-  document.getElementById('btn-save-settings')!.addEventListener('click', () => {
-    onSave(parseInt(minSlider.value), parseInt(maxSlider.value))
+  byId('btn-save-settings').addEventListener('click', () => {
+    onSave(parseInt(minSlider.value, 10), parseInt(maxSlider.value, 10))
   })
 
-  document.getElementById('btn-cancel-settings')!.addEventListener('click', () => hideSettings())
+  byId('btn-cancel-settings').addEventListener('click', () => hideSettings())
 
-  document.getElementById('btn-reset')!.addEventListener('click', () => {
-    if (confirm('Reset all progress? Your condition, streak, and achievements will be lost. This cannot be undone.')) {
+  byId('btn-reset').addEventListener('click', () => {
+    if (
+      confirm(
+        'Reset all progress? Your condition, streak, and achievements will be lost. This cannot be undone.',
+      )
+    ) {
       onReset()
     }
   })
@@ -281,7 +306,7 @@ export function hideSettings(): void {
 }
 
 export function renderOnboarding(onComplete: (min: number, max: number) => void): void {
-  const app = document.querySelector<HTMLDivElement>('#app')!
+  const app = qs<HTMLDivElement>('#app')
   app.innerHTML = `
     <div class="onboarding">
       <div class="onboarding-character" id="onboarding-character">${renderShrimp()}</div>
@@ -305,14 +330,14 @@ export function renderOnboarding(onComplete: (min: number, max: number) => void)
   const onboardChar = document.getElementById('onboarding-character')
   if (onboardChar) updateShrimp(onboardChar, 80)
 
-  const minSlider = document.getElementById('onboard-min') as HTMLInputElement
-  const maxSlider = document.getElementById('onboard-max') as HTMLInputElement
-  const minVal = document.getElementById('onboard-min-val')!
-  const maxVal = document.getElementById('onboard-max-val')!
+  const minSlider = byId<HTMLInputElement>('onboard-min')
+  const maxSlider = byId<HTMLInputElement>('onboard-max')
+  const minVal = byId('onboard-min-val')
+  const maxVal = byId('onboard-max-val')
 
   minSlider.addEventListener('input', () => {
     minVal.textContent = minSlider.value
-    if (parseInt(minSlider.value) > parseInt(maxSlider.value)) {
+    if (parseInt(minSlider.value, 10) > parseInt(maxSlider.value, 10)) {
       maxSlider.value = minSlider.value
       maxVal.textContent = minSlider.value
     }
@@ -320,13 +345,13 @@ export function renderOnboarding(onComplete: (min: number, max: number) => void)
 
   maxSlider.addEventListener('input', () => {
     maxVal.textContent = maxSlider.value
-    if (parseInt(maxSlider.value) < parseInt(minSlider.value)) {
+    if (parseInt(maxSlider.value, 10) < parseInt(minSlider.value, 10)) {
       minSlider.value = maxSlider.value
       minVal.textContent = maxSlider.value
     }
   })
 
-  document.getElementById('btn-start')!.addEventListener('click', () => {
-    onComplete(parseInt(minSlider.value), parseInt(maxSlider.value))
+  byId('btn-start').addEventListener('click', () => {
+    onComplete(parseInt(minSlider.value, 10), parseInt(maxSlider.value, 10))
   })
 }

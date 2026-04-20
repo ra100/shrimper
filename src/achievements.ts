@@ -51,15 +51,17 @@ function playNext(): void {
     <div class="confetti-layer"></div>
   `
 
-  const confettiLayer = overlay.querySelector<HTMLDivElement>('.confetti-layer')!
-  for (let i = 0; i < CONFETTI_COUNT; i++) {
-    const c = document.createElement('span')
-    c.className = 'confetti'
-    const x = (Math.random() - 0.5) * 400
-    const delay = Math.random() * 0.4
-    const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length]
-    c.setAttribute('style', `--x: ${x}px; --delay: ${delay}s; background: ${color};`)
-    confettiLayer.appendChild(c)
+  const confettiLayer = overlay.querySelector<HTMLDivElement>('.confetti-layer')
+  if (confettiLayer) {
+    for (let i = 0; i < CONFETTI_COUNT; i++) {
+      const c = document.createElement('span')
+      c.className = 'confetti'
+      const x = (Math.random() - 0.5) * 400
+      const delay = Math.random() * 0.4
+      const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length]
+      c.setAttribute('style', `--x: ${x}px; --delay: ${delay}s; background: ${color};`)
+      confettiLayer.appendChild(c)
+    }
   }
 
   document.body.appendChild(overlay)

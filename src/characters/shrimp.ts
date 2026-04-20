@@ -18,10 +18,7 @@ import s10 from '../assets/shrimp/stage-10.png'
 import s11 from '../assets/shrimp/stage-11.png'
 import s12 from '../assets/shrimp/stage-12.png'
 
-const FRAMES: readonly string[] = [
-  s00, s01, s02, s03, s04, s05, s06,
-  s07, s08, s09, s10, s11, s12,
-]
+const FRAMES: readonly string[] = [s00, s01, s02, s03, s04, s05, s06, s07, s08, s09, s10, s11, s12]
 
 const FRAME_COUNT = FRAMES.length
 

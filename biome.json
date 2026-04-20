@@ -6,8 +6,16 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["src/**/*.ts", "src/**/*.tsx", "*.ts", "*.json"],
-    "experimentalScannerIgnores": ["dist", "node_modules", "docs", "public"]
+    "includes": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "*.ts",
+      "*.json",
+      "!!**/dist",
+      "!!**/node_modules",
+      "!!**/docs",
+      "!!**/public"
+    ]
   },
   "formatter": {
     "enabled": true,

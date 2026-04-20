@@ -1,12 +1,36 @@
-import { loadState, saveState, isFirstRun, recordCompletion, recordIgnored, recordSnooze, resetProgress, togglePaused, type ShrimperState } from './state'
-import { createTimer, type ReminderTimer } from './timer'
-import { createEscalation, escalateOnIgnore, deescalateOnComplete, type EscalationState } from './escalation'
-import { getRandomTip, getQuipForTip } from './tips'
-import { renderDashboard, renderOverlay, renderOnboarding, renderSettings, hideOverlay, hideSettings, updateStats, updatePauseButton } from './ui'
-import { flashShrimp } from './characters/shrimp'
 import { celebrate } from './achievements'
+import { flashShrimp } from './characters/shrimp'
+import {
+  createEscalation,
+  deescalateOnComplete,
+  type EscalationState,
+  escalateOnIgnore,
+} from './escalation'
+import { getPermissionState, requestPermission, showNotification } from './notifications'
+import {
+  isFirstRun,
+  loadState,
+  recordCompletion,
+  recordIgnored,
+  recordSnooze,
+  resetProgress,
+  type ShrimperState,
+  saveState,
+  togglePaused,
+} from './state'
 import { startTitleFlash, stopTitleFlash } from './tab-indicator'
-import { requestPermission, showNotification, getPermissionState } from './notifications'
+import { createTimer, type ReminderTimer } from './timer'
+import { getQuipForTip, getRandomTip } from './tips'
+import {
+  hideOverlay,
+  hideSettings,
+  renderDashboard,
+  renderOnboarding,
+  renderOverlay,
+  renderSettings,
+  updatePauseButton,
+  updateStats,
+} from './ui'
 
 let state: ShrimperState
 let escalation: EscalationState
@@ -66,7 +90,7 @@ function handleReminder(): void {
   showNotification(`${tip.emoji} ${tip.text}`, getQuipForTip(tip))
 
   if (!document.hasFocus()) {
-    startTitleFlash(tip.emoji + ' ' + tip.text)
+    startTitleFlash(`${tip.emoji} ${tip.text}`)
     window.addEventListener('focus', () => stopTitleFlash(), { once: true })
   }
 
@@ -134,7 +158,10 @@ async function handleEnableNotifications(): Promise<void> {
   const result = await requestPermission()
   updateNotificationBanner()
   if (result === 'granted') {
-    showNotification('🦐 Notifications enabled!', 'Your shrimp will now nudge you even when you\'re in another app.')
+    showNotification(
+      '🦐 Notifications enabled!',
+      "Your shrimp will now nudge you even when you're in another app.",
+    )
   }
 }
 
@@ -145,7 +172,8 @@ function updateNotificationBanner(): void {
     if (perm === 'granted') {
       banner.style.display = 'none'
     } else if (perm === 'denied') {
-      banner.innerHTML = '🔕 Notifications blocked — enable in browser settings for reminders outside this tab'
+      banner.innerHTML =
+        '🔕 Notifications blocked — enable in browser settings for reminders outside this tab'
       banner.className = 'notification-banner banner-denied'
     }
   }
