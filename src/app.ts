@@ -1,8 +1,8 @@
-import { loadState, saveState, isFirstRun, recordCompletion, recordIgnored, recordSnooze, resetProgress, type ShrimperState } from './state'
+import { loadState, saveState, isFirstRun, recordCompletion, recordIgnored, recordSnooze, resetProgress, togglePaused, type ShrimperState } from './state'
 import { createTimer, type ReminderTimer } from './timer'
 import { createEscalation, escalateOnIgnore, deescalateOnComplete, type EscalationState } from './escalation'
 import { getRandomTip, getQuipForTip } from './tips'
-import { renderDashboard, renderOverlay, renderOnboarding, renderSettings, hideOverlay, hideSettings, updateStats } from './ui'
+import { renderDashboard, renderOverlay, renderOnboarding, renderSettings, hideOverlay, hideSettings, updateStats, updatePauseButton } from './ui'
 import { flashShrimp } from './characters/shrimp'
 import { celebrate } from './achievements'
 import { startTitleFlash, stopTitleFlash } from './tab-indicator'
@@ -46,6 +46,7 @@ async function startDashboard(): Promise<void> {
   renderDashboard(state, timer, {
     onOpenSettings: () => renderSettings(state, handleSettingsChange, handleResetProgress),
     onEnableNotifications: handleEnableNotifications,
+    onTogglePause: handlePauseToggle,
   })
 
   const perm = getPermissionState()
@@ -54,7 +55,7 @@ async function startDashboard(): Promise<void> {
     updateNotificationBanner()
   }
 
-  timer.start()
+  if (!state.settings.paused) timer.start()
 }
 
 function handleReminder(): void {
@@ -148,6 +149,17 @@ function updateNotificationBanner(): void {
       banner.className = 'notification-banner banner-denied'
     }
   }
+}
+
+function handlePauseToggle(): void {
+  state = togglePaused(state)
+  saveState(state)
+  if (state.settings.paused) {
+    timer.stop()
+  } else {
+    timer.start()
+  }
+  updatePauseButton(state.settings.paused)
 }
 
 function handleSettingsChange(minInterval: number, maxInterval: number): void {

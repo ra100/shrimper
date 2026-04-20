@@ -37,7 +37,7 @@ function renderAchievementsGrid(state: ShrimperState): string {
 export function renderDashboard(
   state: ShrimperState,
   timer: ReminderTimer,
-  handlers: { onOpenSettings: () => void; onEnableNotifications: () => void },
+  handlers: { onOpenSettings: () => void; onEnableNotifications: () => void; onTogglePause: () => void },
 ): void {
   const app = document.querySelector<HTMLDivElement>('#app')!
   const condition = state.progress.condition
@@ -90,7 +90,8 @@ export function renderDashboard(
       </div>
 
       <div class="next-reminder" id="next-reminder">
-        Next reminder: <span id="countdown">starting...</span>
+        <span id="countdown">${state.settings.paused ? '⏸ Paused' : 'starting...'}</span>
+        <button class="btn-pause" id="btn-pause">${state.settings.paused ? '▶ Resume' : '⏸ Pause'}</button>
       </div>
     </div>
   `
@@ -99,6 +100,7 @@ export function renderDashboard(
   if (shrimpEl) updateShrimp(shrimpEl, condition)
 
   document.getElementById('settings-btn')!.addEventListener('click', handlers.onOpenSettings)
+  document.getElementById('btn-pause')!.addEventListener('click', handlers.onTogglePause)
 
   const enableBtn = document.getElementById('btn-enable-notif')
   if (enableBtn) {
@@ -108,16 +110,12 @@ export function renderDashboard(
   if (countdownInterval) clearInterval(countdownInterval)
   countdownInterval = setInterval(() => {
     const el = document.getElementById('countdown')
-    if (el && timer.isRunning()) {
-      el.textContent = getApproxTimeRemaining(timer.getNextFireTime())
-    }
+    if (el && timer.isRunning()) el.textContent = getApproxTimeRemaining(timer.getNextFireTime())
   }, 5000)
 
   setTimeout(() => {
     const el = document.getElementById('countdown')
-    if (el && timer.isRunning()) {
-      el.textContent = getApproxTimeRemaining(timer.getNextFireTime())
-    }
+    if (el && timer.isRunning()) el.textContent = getApproxTimeRemaining(timer.getNextFireTime())
   }, 100)
 }
 
@@ -265,6 +263,13 @@ export function renderSettings(
       onReset()
     }
   })
+}
+
+export function updatePauseButton(paused: boolean): void {
+  const btn = document.getElementById('btn-pause')
+  if (btn) btn.textContent = paused ? '▶ Resume' : '⏸ Pause'
+  const countdown = document.getElementById('countdown')
+  if (countdown && paused) countdown.textContent = '⏸ Paused'
 }
 
 export function hideSettings(): void {

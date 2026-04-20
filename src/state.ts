@@ -1,6 +1,7 @@
 export interface ShrimperSettings {
   minInterval: number // minutes
   maxInterval: number // minutes
+  paused: boolean
 }
 
 export type AchievementId =
@@ -35,6 +36,7 @@ const SCHEMA_VERSION = 2 as const
 const DEFAULT_SETTINGS: ShrimperSettings = {
   minInterval: 15,
   maxInterval: 45,
+  paused: false,
 }
 
 const DEFAULT_ACHIEVEMENTS: Achievements = {
@@ -191,4 +193,11 @@ export function recordIgnored(state: ShrimperState): ShrimperState {
 
 export function recordSnooze(state: ShrimperState): ShrimperState {
   return state
+}
+
+export function togglePaused(state: ShrimperState): ShrimperState {
+  return {
+    ...state,
+    settings: { ...state.settings, paused: !state.settings.paused },
+  }
 }
