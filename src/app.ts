@@ -68,7 +68,8 @@ async function startDashboard(): Promise<void> {
   )
 
   renderDashboard(state, timer, {
-    onOpenSettings: () => renderSettings(state, handleSettingsChange, handleResetProgress),
+    onOpenSettings: () =>
+      renderSettings(state, handleSettingsChange, handleResetProgress, handleTestNotification),
     onEnableNotifications: handleEnableNotifications,
     onTogglePause: handlePauseToggle,
   })
@@ -79,7 +80,26 @@ async function startDashboard(): Promise<void> {
     updateNotificationBanner()
   }
 
-  if (!state.settings.paused) timer.start()
+  if (!state.settings.paused) {
+    timer.start()
+    showFirstReminder()
+  }
+}
+
+function showFirstReminder(): void {
+  snoozeCount = 0
+  hadSnooze = false
+  const tip = getRandomTip()
+  renderOverlay(tip, state, {
+    onComplete: () => handleComplete(),
+    onSnooze: (minutes: number) => handleSnooze(minutes),
+    onDismiss: () => handleDismiss(),
+  })
+}
+
+function handleTestNotification(): void {
+  const tip = getRandomTip()
+  showNotification(`${tip.emoji} ${tip.text}`, getQuipForTip(tip))
 }
 
 function handleReminder(): void {

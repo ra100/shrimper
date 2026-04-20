@@ -218,6 +218,7 @@ export function renderSettings(
   state: ShrimperState,
   onSave: (min: number, max: number) => void,
   onReset: () => void,
+  onTestNotification: () => void,
 ): void {
   const existing = document.getElementById('settings-panel')
   if (existing) existing.remove()
@@ -244,6 +245,8 @@ export function renderSettings(
         <button class="btn btn-dismiss" id="btn-cancel-settings">Cancel</button>
       </div>
 
+      <hr class="settings-divider">
+      <button class="btn btn-secondary" id="btn-test-notif">🔔 Send test notification</button>
       <hr class="settings-divider">
       <button class="btn btn-danger" id="btn-reset">Reset All Progress</button>
     </div>
@@ -278,6 +281,8 @@ export function renderSettings(
   })
 
   byId('btn-cancel-settings').addEventListener('click', () => hideSettings())
+
+  byId('btn-test-notif').addEventListener('click', () => onTestNotification())
 
   byId('btn-reset').addEventListener('click', () => {
     if (
