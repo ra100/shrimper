@@ -27,6 +27,7 @@ export interface ShrimperProgress {
 export interface PendingReminder {
   tipId: string
   firedAt: number
+  lastDecayAt?: number
 }
 
 export interface ShrimperState {
@@ -199,6 +200,18 @@ export function recordIgnored(state: ShrimperState): ShrimperState {
     progress: {
       ...state.progress,
       condition: clamp(state.progress.condition - 4, 0, 100),
+      completionsInRow: 0,
+    },
+  }
+}
+
+export function recordDecay(state: ShrimperState, ticks: number): ShrimperState {
+  if (ticks <= 0) return state
+  return {
+    ...state,
+    progress: {
+      ...state.progress,
+      condition: clamp(state.progress.condition - 3 * ticks, 0, 100),
       completionsInRow: 0,
     },
   }

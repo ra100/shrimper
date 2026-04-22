@@ -11,6 +11,7 @@ import {
   isFirstRun,
   loadState,
   recordCompletion,
+  recordDecay,
   recordIgnored,
   recordSnooze,
   resetProgress,
@@ -37,7 +38,9 @@ let escalation: EscalationState
 let timer: ReminderTimer
 let snoozeCount = 0
 let hadSnooze = false
+let decayTimerId: ReturnType<typeof setTimeout> | null = null
 const MAX_SNOOZES = 2
+const DECAY_INTERVAL_MS = 3 * 60 * 1000
 
 export function initApp(): void {
   state = loadState()
@@ -117,15 +120,64 @@ function showReminderOverlay(tip: Tip, opts: { notify: boolean; flashTitle: bool
     window.addEventListener('focus', () => stopTitleFlash(), { once: true })
   }
 
-  state.pendingReminder = { tipId: tip.id, firedAt: Date.now() }
+  const now = Date.now()
+  const existing = state.pendingReminder
+  state.pendingReminder = {
+    tipId: tip.id,
+    firedAt: existing?.tipId === tip.id ? (existing.firedAt ?? now) : now,
+    lastDecayAt: existing?.tipId === tip.id ? (existing.lastDecayAt ?? now) : now,
+  }
   state.nextFireTime = 0
+
+  catchUpDecay()
   saveState(state)
+  scheduleDecayTick()
 
   renderOverlay(tip, state, {
     onComplete: () => handleComplete(),
     onSnooze: (minutes: number) => handleSnooze(minutes),
     onDismiss: () => handleDismiss(),
   })
+}
+
+function catchUpDecay(): void {
+  const pending = state.pendingReminder
+  if (!pending) return
+  const anchor = pending.lastDecayAt ?? pending.firedAt
+  const elapsed = Date.now() - anchor
+  const ticks = Math.floor(elapsed / DECAY_INTERVAL_MS)
+  if (ticks <= 0) return
+  state = recordDecay(state, ticks)
+  if (state.pendingReminder) {
+    state.pendingReminder.lastDecayAt = anchor + ticks * DECAY_INTERVAL_MS
+  }
+  const shrimpEl = getShrimpEl()
+  if (shrimpEl) flashShrimp(shrimpEl, 'deflate')
+  updateStats(state)
+}
+
+function scheduleDecayTick(): void {
+  clearDecayTimer()
+  const pending = state.pendingReminder
+  if (!pending) return
+  const anchor = pending.lastDecayAt ?? pending.firedAt
+  const delay = Math.max(0, anchor + DECAY_INTERVAL_MS - Date.now())
+  decayTimerId = setTimeout(onDecayTick, delay)
+}
+
+function onDecayTick(): void {
+  decayTimerId = null
+  if (!state.pendingReminder) return
+  catchUpDecay()
+  saveState(state)
+  scheduleDecayTick()
+}
+
+function clearDecayTimer(): void {
+  if (decayTimerId !== null) {
+    clearTimeout(decayTimerId)
+    decayTimerId = null
+  }
 }
 
 function handleTestNotification(): void {
@@ -144,6 +196,7 @@ function getShrimpEl(): HTMLElement | null {
 
 function handleComplete(): void {
   stopTitleFlash()
+  clearDecayTimer()
   const result = recordCompletion(state, hadSnooze)
   state = result.state
   state.pendingReminder = null
@@ -166,6 +219,7 @@ function handleComplete(): void {
 
 function handleSnooze(minutes: number): void {
   stopTitleFlash()
+  clearDecayTimer()
   snoozeCount++
   hadSnooze = true
   state = recordSnooze(state)
@@ -181,6 +235,7 @@ function handleSnooze(minutes: number): void {
 
 function handleDismiss(): void {
   stopTitleFlash()
+  clearDecayTimer()
   state = recordIgnored(state)
   state.pendingReminder = null
   escalation = escalateOnIgnore(escalation, state.settings.minInterval)
@@ -224,10 +279,15 @@ function handlePauseToggle(): void {
   state = togglePaused(state)
   if (state.settings.paused) {
     timer.stop()
+    clearDecayTimer()
     state.nextFireTime = 0
   } else {
     timer.start()
     state.nextFireTime = timer.getNextFireTime()
+    if (state.pendingReminder) {
+      state.pendingReminder.lastDecayAt = Date.now()
+      scheduleDecayTick()
+    }
   }
   saveState(state)
   updatePauseButton(state.settings.paused)
@@ -242,6 +302,7 @@ function handleSettingsChange(minInterval: number, maxInterval: number): void {
 }
 
 function handleResetProgress(): void {
+  clearDecayTimer()
   state = resetProgress(state)
   escalation = createEscalation(state.settings.minInterval, state.settings.maxInterval)
   saveState(state)
