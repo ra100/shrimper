@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versions follow 
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-04-22
+
+### Added
+
+- 🔄 **Auto-update check** — app polls the deployed `version.json` every 5 minutes (and whenever the tab becomes visible). When a new version is live, a dismissible banner offers a one-click reload.
+
+### Internal
+
+- Vite build now emits `dist/version.json` alongside bundles for runtime version discovery.
+
 ## [0.2.0] — 2026-04-22
 
 ### Added
@@ -42,6 +52,7 @@ Initial public build.
 - Onboarding flow
 - Test notification button in settings
 
-[Unreleased]: https://github.com/ra100/shrimper/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/ra100/shrimper/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ra100/shrimper/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ra100/shrimper/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ra100/shrimper/releases/tag/v0.1.0

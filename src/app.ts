@@ -31,9 +31,11 @@ import {
   renderOverlay,
   renderSettings,
   showCustomThought,
+  showUpdateBanner,
   updatePauseButton,
   updateStats,
 } from './ui'
+import { startUpdateCheck } from './update-check'
 
 let state: ShrimperState
 let escalation: EscalationState
@@ -94,6 +96,10 @@ async function startDashboard(): Promise<void> {
   if (!hasSeenCurrentVersion()) {
     renderChangelogModal(() => markVersionSeen())
   }
+
+  startUpdateCheck((newVersion) => {
+    showUpdateBanner(newVersion, () => location.reload())
+  })
 
   if (state.settings.paused) return
 

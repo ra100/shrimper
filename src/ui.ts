@@ -38,7 +38,6 @@ function spawnBubble(): void {
   setTimeout(() => b.remove(), dur * 1000 + 50)
 }
 
-
 function escapeText(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
@@ -272,6 +271,25 @@ export function renderOverlay(
   })
 
   requestAnimationFrame(() => overlay.classList.add('visible'))
+}
+
+export function showUpdateBanner(newVersion: string, onReload: () => void): void {
+  if (document.getElementById('update-banner')) return
+  const banner = document.createElement('div')
+  banner.id = 'update-banner'
+  banner.className = 'update-banner'
+  banner.innerHTML = `
+    <span class="update-msg">🦐 v${escapeText(newVersion)} ready!</span>
+    <button class="btn btn-primary btn-small" id="btn-reload">Reload</button>
+    <button class="update-dismiss" id="btn-update-dismiss" aria-label="Dismiss">✕</button>
+  `
+  document.body.appendChild(banner)
+  requestAnimationFrame(() => banner.classList.add('visible'))
+  byId('btn-reload').addEventListener('click', onReload)
+  byId('btn-update-dismiss').addEventListener('click', () => {
+    banner.classList.remove('visible')
+    setTimeout(() => banner.remove(), 300)
+  })
 }
 
 export function hideOverlay(): void {

@@ -61,4 +61,3 @@ export function getThought(condition: number, name: string): string {
   lastIdx = THOUGHTS.indexOf(pool[idx])
   return pool[idx].text.replaceAll('{name}', name)
 }
-
