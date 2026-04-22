@@ -250,9 +250,10 @@ export function renderSettings(
       <details class="notif-help">
         <summary>Notifications not showing?</summary>
         <div class="notif-help-body">
-          <p><strong>Browser</strong>: click the lock/info icon in the address bar → Site settings → Notifications → <em>Allow</em>. Then reload.</p>
-          <p><strong>macOS</strong>: System Settings → Notifications → find your browser (Chrome/Safari/Firefox) → enable <em>Allow notifications</em>. Set style to <em>Alerts</em> if you want them to stay on screen. Check Focus/Do Not Disturb is off.</p>
-          <p><strong>Windows</strong>: Settings → System → Notifications → turn on notifications, then scroll to your browser and enable it. Disable Focus assist (Settings → System → Focus) if reminders are getting silenced.</p>
+          <p><strong>1. Turn off Focus / Do Not Disturb</strong> (most common!) — macOS menu bar → Control Centre → <em>Focus</em>. Windows: taskbar → bell icon → <em>Focus assist</em>. Focus silently swallows notifications.</p>
+          <p><strong>2. Browser permission</strong>: click the lock/info icon in the address bar → Site settings → Notifications → <em>Allow</em>. Then reload.</p>
+          <p><strong>3. macOS</strong>: System Settings → Notifications → find your browser → enable <em>Allow notifications</em>. Set <em>Alert Style</em> to <strong>Persistent</strong> (not Temporary) — otherwise banners auto-hide in ~5 seconds.</p>
+          <p><strong>4. Windows</strong>: Settings → System → Notifications → turn on notifications, then scroll to your browser and enable it.</p>
           <p><em>Safari</em> users: notifications only work on HTTPS and when the site is added as a web app (Share → Add to Dock).</p>
         </div>
       </details>

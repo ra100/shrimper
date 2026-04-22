@@ -18,6 +18,7 @@ export function showNotification(title: string, body: string): void {
     body,
     icon: '/shrimper/favicon.svg',
     tag: 'shrimper-reminder',
+    requireInteraction: true,
   })
 
   notification.onclick = () => {
