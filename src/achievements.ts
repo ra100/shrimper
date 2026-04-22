@@ -1,12 +1,19 @@
 import type { AchievementId } from './state'
 
-export const ACHIEVEMENT_META: Record<AchievementId, { name: string; icon: string }> = {
+export const ACHIEVEMENT_META: Record<
+  AchievementId,
+  { name: string; icon: string; hidden?: boolean; hint?: string }
+> = {
   firstStretch: { name: 'First Stretch', icon: '🌱' },
   threeInRow: { name: 'Triple Threat', icon: '🎯' },
   streak7: { name: 'Weekly Warrior', icon: '📅' },
   streak30: { name: 'Monthly Master', icon: '🏅' },
   total100: { name: 'Century Shrimp', icon: '💯' },
   peakCondition: { name: 'Peak Posture', icon: '👑' },
+  nightOwl: { name: 'Night Owl', icon: '🦉', hidden: true, hint: '???' },
+  earlyBird: { name: 'Early Bird', icon: '🐦', hidden: true, hint: '???' },
+  comebackKid: { name: 'Comeback Kid', icon: '🧗', hidden: true, hint: '???' },
+  speedShrimp: { name: 'Speed Shrimp', icon: '⚡', hidden: true, hint: '???' },
 }
 
 export const ACHIEVEMENT_ORDER: AchievementId[] = [
@@ -16,6 +23,10 @@ export const ACHIEVEMENT_ORDER: AchievementId[] = [
   'streak30',
   'total100',
   'peakCondition',
+  'nightOwl',
+  'earlyBird',
+  'comebackKid',
+  'speedShrimp',
 ]
 
 const CONFETTI_COLORS = ['#e8734a', '#ffc857', '#4caf50', '#42a5f5', '#ab47bc', '#ef5350']

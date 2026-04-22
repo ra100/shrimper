@@ -1,4 +1,5 @@
 import { celebrate } from './achievements'
+import { hasSeenCurrentVersion, markVersionSeen, renderChangelogModal } from './changelog'
 import { flashShrimp } from './characters/shrimp'
 import {
   createEscalation,
@@ -29,6 +30,7 @@ import {
   renderOnboarding,
   renderOverlay,
   renderSettings,
+  showCustomThought,
   updatePauseButton,
   updateStats,
 } from './ui'
@@ -53,10 +55,16 @@ export function initApp(): void {
   startDashboard()
 }
 
-async function handleOnboardingComplete(minInterval: number, maxInterval: number): Promise<void> {
+async function handleOnboardingComplete(
+  minInterval: number,
+  maxInterval: number,
+  shrimpName: string,
+): Promise<void> {
   state.settings.minInterval = minInterval
   state.settings.maxInterval = maxInterval
+  state.settings.shrimpName = shrimpName
   saveState(state)
+  markVersionSeen()
   await requestPermission()
   startDashboard()
 }
@@ -81,6 +89,10 @@ async function startDashboard(): Promise<void> {
   if (perm === 'default') {
     await requestPermission()
     updateNotificationBanner()
+  }
+
+  if (!hasSeenCurrentVersion()) {
+    renderChangelogModal(() => markVersionSeen())
   }
 
   if (state.settings.paused) return
@@ -113,7 +125,9 @@ function showReminderOverlay(tip: Tip, opts: { notify: boolean; flashTitle: bool
   snoozeCount = 0
   hadSnooze = false
 
-  if (opts.notify) showNotification(`${tip.emoji} ${tip.text}`, getQuipForTip(tip))
+  if (opts.notify) {
+    showNotification(`${tip.emoji} ${state.settings.shrimpName}: ${tip.text}`, getQuipForTip(tip))
+  }
 
   if (opts.flashTitle && !document.hasFocus()) {
     startTitleFlash(`${tip.emoji} ${tip.text}`)
@@ -197,7 +211,9 @@ function getShrimpEl(): HTMLElement | null {
 function handleComplete(): void {
   stopTitleFlash()
   clearDecayTimer()
-  const result = recordCompletion(state, hadSnooze)
+  const firedAt = state.pendingReminder?.firedAt ?? 0
+  const elapsedMs = firedAt > 0 ? Date.now() - firedAt : 0
+  const result = recordCompletion(state, hadSnooze, elapsedMs)
   state = result.state
   state.pendingReminder = null
   escalation = deescalateOnComplete(escalation, state.settings.maxInterval)
@@ -206,6 +222,7 @@ function handleComplete(): void {
 
   const shrimpEl = getShrimpEl()
   if (shrimpEl) flashShrimp(shrimpEl, 'bounce')
+  showCustomThought('ahhhh 🫠')
 
   if (result.unlocked.length > 0) {
     celebrate(result.unlocked)
@@ -293,12 +310,15 @@ function handlePauseToggle(): void {
   updatePauseButton(state.settings.paused)
 }
 
-function handleSettingsChange(minInterval: number, maxInterval: number): void {
+function handleSettingsChange(minInterval: number, maxInterval: number, shrimpName: string): void {
   state.settings.minInterval = minInterval
   state.settings.maxInterval = maxInterval
+  state.settings.shrimpName = shrimpName
   escalation = createEscalation(minInterval, maxInterval)
   saveState(state)
   hideSettings()
+  const nameEl = document.getElementById('shrimp-name')
+  if (nameEl) nameEl.textContent = shrimpName
 }
 
 function handleResetProgress(): void {

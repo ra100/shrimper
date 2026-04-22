@@ -2,6 +2,7 @@ export interface ShrimperSettings {
   minInterval: number // minutes
   maxInterval: number // minutes
   paused: boolean
+  shrimpName: string
 }
 
 export type AchievementId =
@@ -11,6 +12,10 @@ export type AchievementId =
   | 'streak30'
   | 'total100'
   | 'peakCondition'
+  | 'nightOwl'
+  | 'earlyBird'
+  | 'comebackKid'
+  | 'speedShrimp'
 
 export type Achievements = Record<AchievementId, string | null>
 
@@ -45,6 +50,7 @@ const DEFAULT_SETTINGS: ShrimperSettings = {
   minInterval: 15,
   maxInterval: 45,
   paused: false,
+  shrimpName: 'Kevin',
 }
 
 const DEFAULT_ACHIEVEMENTS: Achievements = {
@@ -54,6 +60,10 @@ const DEFAULT_ACHIEVEMENTS: Achievements = {
   streak30: null,
   total100: null,
   peakCondition: null,
+  nightOwl: null,
+  earlyBird: null,
+  comebackKid: null,
+  speedShrimp: null,
 }
 
 const DEFAULT_PROGRESS: ShrimperProgress = {
@@ -130,10 +140,17 @@ function yesterdayString(): string {
   return d.toISOString().slice(0, 10)
 }
 
-function checkAchievements(progress: ShrimperProgress): AchievementId[] {
+interface CompletionContext {
+  conditionBefore: number
+  elapsedMs: number
+  completedAt: Date
+}
+
+function checkAchievements(progress: ShrimperProgress, ctx: CompletionContext): AchievementId[] {
   const today = todayString()
   const unlocked: AchievementId[] = []
   const a = progress.achievements
+  const hour = ctx.completedAt.getHours()
 
   const triggers: Array<[AchievementId, boolean]> = [
     ['firstStretch', progress.totalCompletions === 1],
@@ -142,6 +159,10 @@ function checkAchievements(progress: ShrimperProgress): AchievementId[] {
     ['streak30', progress.streak === 30],
     ['total100', progress.totalCompletions === 100],
     ['peakCondition', progress.condition === 100],
+    ['nightOwl', hour >= 2 && hour < 5],
+    ['earlyBird', hour >= 5 && hour < 7],
+    ['comebackKid', ctx.conditionBefore < 20],
+    ['speedShrimp', ctx.elapsedMs > 0 && ctx.elapsedMs < 30_000],
   ]
 
   for (const [id, hit] of triggers) {
@@ -156,6 +177,7 @@ function checkAchievements(progress: ShrimperProgress): AchievementId[] {
 export function recordCompletion(
   state: ShrimperState,
   wasSnoozed: boolean,
+  elapsedMs = 0,
 ): { state: ShrimperState; unlocked: AchievementId[] } {
   const delta = wasSnoozed ? 1 : 3
   const today = todayString()
@@ -186,7 +208,11 @@ export function recordCompletion(
     achievements: { ...prev.achievements },
   }
 
-  const unlocked = checkAchievements(nextProgress)
+  const unlocked = checkAchievements(nextProgress, {
+    conditionBefore: prev.condition,
+    elapsedMs,
+    completedAt: new Date(),
+  })
 
   return {
     state: { ...state, progress: nextProgress },

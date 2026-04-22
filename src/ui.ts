@@ -1,11 +1,85 @@
 import { ACHIEVEMENT_META, ACHIEVEMENT_ORDER } from './achievements'
+import { APP_VERSION, renderChangelogModal } from './changelog'
 import { renderShrimp, updateShrimp } from './characters/shrimp'
 import { getPermissionState } from './notifications'
 import type { ShrimperState } from './state'
+import { getThought } from './thoughts'
 import { getApproxTimeRemaining, type ReminderTimer } from './timer'
 import { getQuipForTip, type Tip } from './tips'
 
 let countdownInterval: ReturnType<typeof setInterval> | null = null
+let thoughtInterval: ReturnType<typeof setInterval> | null = null
+let bubbleTimeout: ReturnType<typeof setTimeout> | null = null
+const THOUGHT_INTERVAL_MS = 60_000
+
+function scheduleBubble(): void {
+  if (bubbleTimeout) clearTimeout(bubbleTimeout)
+  const delay = 1500 + Math.random() * 3500
+  bubbleTimeout = setTimeout(() => {
+    spawnBubble()
+    scheduleBubble()
+  }, delay)
+}
+
+function spawnBubble(): void {
+  const layer = document.getElementById('bubble-layer')
+  if (!layer) return
+  const b = document.createElement('span')
+  b.className = 'bubble'
+  const size = 6 + Math.random() * 10
+  const x = 10 + Math.random() * 80
+  const drift = (Math.random() - 0.5) * 24
+  const dur = 3 + Math.random() * 2
+  b.style.setProperty('--size', `${size}px`)
+  b.style.setProperty('--x', `${x}%`)
+  b.style.setProperty('--drift', `${drift}px`)
+  b.style.setProperty('--dur', `${dur}s`)
+  layer.appendChild(b)
+  setTimeout(() => b.remove(), dur * 1000 + 50)
+}
+
+
+function escapeText(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function showThought(state: ShrimperState, force = false): void {
+  const bubble = document.getElementById('speech-bubble')
+  if (!bubble) return
+  const text = getThought(state.progress.condition, state.settings.shrimpName)
+  if (!text) return
+  if (!force && Math.random() > 0.6) return // ~60% chance per tick = natural pacing
+  bubble.innerHTML = escapeText(text)
+  bubble.classList.remove('visible')
+  requestAnimationFrame(() => bubble.classList.add('visible'))
+}
+
+export function showCustomThought(text: string): void {
+  const bubble = document.getElementById('speech-bubble')
+  if (!bubble) return
+  bubble.innerHTML = escapeText(text)
+  bubble.classList.remove('visible')
+  requestAnimationFrame(() => bubble.classList.add('visible'))
+}
+
+function stopThoughts(): void {
+  if (thoughtInterval) {
+    clearInterval(thoughtInterval)
+    thoughtInterval = null
+  }
+}
+
+function startThoughts(state: ShrimperState): void {
+  stopThoughts()
+  thoughtInterval = setInterval(() => {
+    const currentBubble = document.getElementById('speech-bubble')
+    if (!currentBubble) {
+      stopThoughts()
+      return
+    }
+    showThought(state)
+  }, THOUGHT_INTERVAL_MS)
+}
 
 function byId<T extends HTMLElement = HTMLElement>(id: string): T {
   const el = document.getElementById(id)
@@ -31,6 +105,14 @@ function renderAchievementsGrid(state: ShrimperState): string {
               <span class="ach-icon">${meta.icon}</span>
               <span class="ach-name">${meta.name}</span>
               <span class="ach-date">${unlockedAt}</span>
+            </div>
+          `
+        }
+        if (meta.hidden) {
+          return `
+            <div class="achievement-tile locked hidden-achievement" data-id="${id}" title="Hidden achievement — discover how to unlock it">
+              <span class="ach-icon">❓</span>
+              <span class="ach-name">${meta.hint ?? '???'}</span>
             </div>
           `
         }
@@ -79,9 +161,14 @@ export function renderDashboard(
       }
 
       <div class="character-area">
-        <div class="shrimp-character" id="shrimp-character">
-          ${renderShrimp()}
+        <div class="speech-bubble" id="speech-bubble"></div>
+        <div class="shrimp-stage">
+          <div class="bubble-layer" id="bubble-layer" aria-hidden="true"></div>
+          <div class="shrimp-character" id="shrimp-character">
+            ${renderShrimp()}
+          </div>
         </div>
+        <div class="shrimp-name" id="shrimp-name">${escapeText(state.settings.shrimpName)}</div>
       </div>
 
       <div class="condition-section">
@@ -138,6 +225,10 @@ export function renderDashboard(
     const el = document.getElementById('countdown')
     if (el && timer.isRunning()) el.textContent = getApproxTimeRemaining(timer.getNextFireTime())
   }, 100)
+
+  setTimeout(() => showThought(state, true), 1200)
+  startThoughts(state)
+  scheduleBubble()
 }
 
 export function renderOverlay(
@@ -216,7 +307,7 @@ export function updateStats(state: ShrimperState): void {
 
 export function renderSettings(
   state: ShrimperState,
-  onSave: (min: number, max: number) => void,
+  onSave: (min: number, max: number, shrimpName: string) => void,
   onReset: () => void,
   onTestNotification: () => void,
 ): void {
@@ -229,6 +320,11 @@ export function renderSettings(
   panel.innerHTML = `
     <div class="overlay-content settings-content">
       <h2>Settings</h2>
+
+      <div class="setting-group">
+        <label for="name-input">Shrimp's name</label>
+        <input type="text" id="name-input" maxlength="24" value="${escapeText(state.settings.shrimpName)}" class="text-input">
+      </div>
 
       <div class="setting-group">
         <label>Min interval: <span id="min-val">${state.settings.minInterval}</span> min</label>
@@ -259,6 +355,10 @@ export function renderSettings(
       </details>
       <hr class="settings-divider">
       <button class="btn btn-danger" id="btn-reset">Reset All Progress</button>
+
+      <div class="settings-footer">
+        <button type="button" class="version-link" id="btn-changelog" title="View changelog">v${APP_VERSION}</button>
+      </div>
     </div>
   `
 
@@ -286,13 +386,17 @@ export function renderSettings(
     }
   })
 
+  const nameInput = byId<HTMLInputElement>('name-input')
   byId('btn-save-settings').addEventListener('click', () => {
-    onSave(parseInt(minSlider.value, 10), parseInt(maxSlider.value, 10))
+    const name = nameInput.value.trim() || state.settings.shrimpName
+    onSave(parseInt(minSlider.value, 10), parseInt(maxSlider.value, 10), name)
   })
 
   byId('btn-cancel-settings').addEventListener('click', () => hideSettings())
 
   byId('btn-test-notif').addEventListener('click', () => onTestNotification())
+
+  byId('btn-changelog').addEventListener('click', () => renderChangelogModal())
 
   byId('btn-reset').addEventListener('click', () => {
     if (
@@ -320,7 +424,9 @@ export function hideSettings(): void {
   }
 }
 
-export function renderOnboarding(onComplete: (min: number, max: number) => void): void {
+export function renderOnboarding(
+  onComplete: (min: number, max: number, shrimpName: string) => void,
+): void {
   const app = qs<HTMLDivElement>('#app')
   app.innerHTML = `
     <div class="onboarding">
@@ -329,6 +435,11 @@ export function renderOnboarding(onComplete: (min: number, max: number) => void)
       <p>I'll remind you to sit straight, stretch, and take breaks.<br>Help me straighten up — your care shows in my posture!</p>
 
       <div class="onboarding-settings">
+        <div class="setting-group">
+          <label for="onboard-name">What should we call your shrimp?</label>
+          <input type="text" id="onboard-name" class="text-input" placeholder="Kevin" maxlength="24" value="Kevin">
+        </div>
+
         <div class="setting-group">
           <label>Remind me every <span id="onboard-min-val">15</span> to <span id="onboard-max-val">45</span> minutes</label>
           <div class="range-pair">
@@ -366,7 +477,9 @@ export function renderOnboarding(onComplete: (min: number, max: number) => void)
     }
   })
 
+  const nameInput = byId<HTMLInputElement>('onboard-name')
   byId('btn-start').addEventListener('click', () => {
-    onComplete(parseInt(minSlider.value, 10), parseInt(maxSlider.value, 10))
+    const name = nameInput.value.trim() || 'Kevin'
+    onComplete(parseInt(minSlider.value, 10), parseInt(maxSlider.value, 10), name)
   })
 }
