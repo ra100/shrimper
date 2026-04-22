@@ -57,10 +57,10 @@ git push --follow-tags
 
 ## Feature work conventions
 
-- Keep modules single-purpose (see `CLAUDE.md` architecture)
-- No frameworks. Vanilla TS only.
+See `CLAUDE.md` for architecture, tech stack, and gameplay invariants — don't fight them.
+
+- Keep modules single-purpose
 - All state mutations go through `state.ts` helpers
-- SVG characters are generated in code — no raster assets for characters
 - New persistent fields need a schema migration (bump `SCHEMA_VERSION` + map old → new in `loadState`)
 
 ## UI conventions
