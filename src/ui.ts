@@ -325,10 +325,13 @@ export function updateStats(state: ShrimperState): void {
 
 export function renderSettings(
   state: ShrimperState,
-  onSave: (min: number, max: number, shrimpName: string) => void,
+  onSave: (min: number, max: number, shrimpName: string, pauseOnLock: boolean) => void,
   onReset: () => void,
   onTestNotification: () => void,
 ): void {
+  const idleSupported =
+    typeof window !== 'undefined' &&
+    typeof (window as unknown as { IdleDetector?: unknown }).IdleDetector === 'function'
   const existing = document.getElementById('settings-panel')
   if (existing) existing.remove()
 
@@ -353,6 +356,24 @@ export function renderSettings(
         <label>Max interval: <span id="max-val">${state.settings.maxInterval}</span> min</label>
         <input type="range" id="max-slider" min="5" max="120" value="${state.settings.maxInterval}">
       </div>
+
+      ${
+        idleSupported
+          ? `<div class="setting-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="pause-on-lock" ${state.settings.pauseOnLock ? 'checked' : ''}>
+          Pause reminders while screen is locked
+        </label>
+        <p class="setting-hint">Uses Chrome's Idle Detection API — asks permission on enable.</p>
+      </div>`
+          : `<div class="setting-group">
+        <label class="checkbox-label checkbox-disabled">
+          <input type="checkbox" disabled>
+          Pause reminders while screen is locked
+        </label>
+        <p class="setting-hint">Not supported in this browser (Chrome/Edge only).</p>
+      </div>`
+      }
 
       <div class="overlay-actions">
         <button class="btn btn-primary" id="btn-save-settings">Save</button>
@@ -407,7 +428,9 @@ export function renderSettings(
   const nameInput = byId<HTMLInputElement>('name-input')
   byId('btn-save-settings').addEventListener('click', () => {
     const name = nameInput.value.trim() || state.settings.shrimpName
-    onSave(parseInt(minSlider.value, 10), parseInt(maxSlider.value, 10), name)
+    const pauseOnLockEl = document.getElementById('pause-on-lock') as HTMLInputElement | null
+    const pauseOnLock = pauseOnLockEl ? pauseOnLockEl.checked : state.settings.pauseOnLock
+    onSave(parseInt(minSlider.value, 10), parseInt(maxSlider.value, 10), name, pauseOnLock)
   })
 
   byId('btn-cancel-settings').addEventListener('click', () => hideSettings())

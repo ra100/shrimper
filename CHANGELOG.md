@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versions follow 
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-04-23
+
+### Added
+
+- 🔒 **Pause on screen lock** (opt-in) — new settings toggle uses Chrome's Idle Detection API to pause the reminder timer and decay while the screen is locked, then resumes with the same remaining delay on unlock. Chromium-only; requires permission grant.
+
+### Changed
+
+- 🕒 **Decay resumes from "now" after big gaps** — if the wall clock jumps forward by more than two decay intervals (machine sleep, laptop lid closed, heavy tab throttling), we cap retroactive decay at two ticks and realign the anchor. Prevents the shrimp from rotting six hours' worth of penalty the moment you wake the laptop.
+
 ## [0.3.0] — 2026-04-22
 
 ### Added
@@ -52,7 +62,8 @@ Initial public build.
 - Onboarding flow
 - Test notification button in settings
 
-[Unreleased]: https://github.com/ra100/shrimper/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/ra100/shrimper/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/ra100/shrimper/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ra100/shrimper/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ra100/shrimper/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ra100/shrimper/releases/tag/v0.1.0

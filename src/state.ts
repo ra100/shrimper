@@ -3,6 +3,7 @@ export interface ShrimperSettings {
   maxInterval: number // minutes
   paused: boolean
   shrimpName: string
+  pauseOnLock: boolean
 }
 
 export type AchievementId =
@@ -51,6 +52,7 @@ const DEFAULT_SETTINGS: ShrimperSettings = {
   maxInterval: 45,
   paused: false,
   shrimpName: 'Kevin',
+  pauseOnLock: false,
 }
 
 const DEFAULT_ACHIEVEMENTS: Achievements = {

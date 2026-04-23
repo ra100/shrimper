@@ -7,6 +7,7 @@ import {
   type EscalationState,
   escalateOnIgnore,
 } from './escalation'
+import { createIdleWatch, type IdleWatch } from './idle-watch'
 import { getPermissionState, requestPermission, showNotification } from './notifications'
 import {
   isFirstRun,
@@ -43,8 +44,13 @@ let timer: ReminderTimer
 let snoozeCount = 0
 let hadSnooze = false
 let decayTimerId: ReturnType<typeof setTimeout> | null = null
+let idleWatch: IdleWatch | null = null
+let lockedNextFire = 0
 const MAX_SNOOZES = 2
 const DECAY_INTERVAL_MS = 3 * 60 * 1000
+// Max backlog of decay ticks applied per catchUp — caps retroactive penalty
+// when the wall clock jumps forward (machine sleep, tab throttled in background).
+const MAX_CATCHUP_TICKS = 2
 
 export function initApp(): void {
   state = loadState()
@@ -100,6 +106,8 @@ async function startDashboard(): Promise<void> {
   startUpdateCheck((newVersion) => {
     showUpdateBanner(newVersion, () => location.reload())
   })
+
+  initIdleWatch()
 
   if (state.settings.paused) return
 
@@ -164,12 +172,18 @@ function catchUpDecay(): void {
   const pending = state.pendingReminder
   if (!pending) return
   const anchor = pending.lastDecayAt ?? pending.firedAt
-  const elapsed = Date.now() - anchor
-  const ticks = Math.floor(elapsed / DECAY_INTERVAL_MS)
-  if (ticks <= 0) return
+  const now = Date.now()
+  const elapsed = now - anchor
+  const rawTicks = Math.floor(elapsed / DECAY_INTERVAL_MS)
+  if (rawTicks <= 0) return
+  // If the gap is much larger than the decay interval, assume the machine was
+  // asleep / locked / tab throttled — cap the penalty and realign the anchor
+  // to "now" so decay resumes from this moment rather than back-filling the gap.
+  const ticks = Math.min(rawTicks, MAX_CATCHUP_TICKS)
+  const sleptThrough = rawTicks > MAX_CATCHUP_TICKS
   state = recordDecay(state, ticks)
   if (state.pendingReminder) {
-    state.pendingReminder.lastDecayAt = anchor + ticks * DECAY_INTERVAL_MS
+    state.pendingReminder.lastDecayAt = sleptThrough ? now : anchor + ticks * DECAY_INTERVAL_MS
   }
   const shrimpEl = getShrimpEl()
   if (shrimpEl) flashShrimp(shrimpEl, 'deflate')
@@ -298,6 +312,54 @@ function updateNotificationBanner(): void {
   }
 }
 
+function initIdleWatch(): void {
+  if (idleWatch) idleWatch.disable()
+  idleWatch = createIdleWatch({
+    onLock: handleLock,
+    onUnlock: handleUnlock,
+  })
+  if (state.settings.pauseOnLock && idleWatch.isSupported()) {
+    void idleWatch.enable().then((ok) => {
+      if (!ok) {
+        state.settings.pauseOnLock = false
+        saveState(state)
+      }
+    })
+  }
+}
+
+function handleLock(): void {
+  if (state.settings.paused) return
+  // Remember target so we can resume from the same remaining delay.
+  lockedNextFire = timer.getNextFireTime()
+  timer.stop()
+  clearDecayTimer()
+  // Keep nextFireTime persisted — reload during lock will still recover.
+  state.nextFireTime = lockedNextFire
+  saveState(state)
+}
+
+function handleUnlock(lockedDurationMs: number): void {
+  if (state.settings.paused) return
+  // Shift reminder target forward by the locked duration.
+  if (lockedNextFire > 0) {
+    const shifted = lockedNextFire + lockedDurationMs
+    timer.resumeAt(shifted)
+    state.nextFireTime = shifted
+  } else if (!state.pendingReminder) {
+    timer.start()
+    state.nextFireTime = timer.getNextFireTime()
+  }
+  // Shift decay anchor so the locked span doesn't count toward decay.
+  if (state.pendingReminder) {
+    const anchor = state.pendingReminder.lastDecayAt ?? state.pendingReminder.firedAt
+    state.pendingReminder.lastDecayAt = anchor + lockedDurationMs
+    scheduleDecayTick()
+  }
+  lockedNextFire = 0
+  saveState(state)
+}
+
 function handlePauseToggle(): void {
   state = togglePaused(state)
   if (state.settings.paused) {
@@ -316,15 +378,35 @@ function handlePauseToggle(): void {
   updatePauseButton(state.settings.paused)
 }
 
-function handleSettingsChange(minInterval: number, maxInterval: number, shrimpName: string): void {
+function handleSettingsChange(
+  minInterval: number,
+  maxInterval: number,
+  shrimpName: string,
+  pauseOnLock: boolean,
+): void {
+  const prevPauseOnLock = state.settings.pauseOnLock
   state.settings.minInterval = minInterval
   state.settings.maxInterval = maxInterval
   state.settings.shrimpName = shrimpName
+  state.settings.pauseOnLock = pauseOnLock
   escalation = createEscalation(minInterval, maxInterval)
   saveState(state)
   hideSettings()
   const nameEl = document.getElementById('shrimp-name')
   if (nameEl) nameEl.textContent = shrimpName
+
+  if (pauseOnLock !== prevPauseOnLock && idleWatch) {
+    if (pauseOnLock) {
+      void idleWatch.enable().then((ok) => {
+        if (!ok) {
+          state.settings.pauseOnLock = false
+          saveState(state)
+        }
+      })
+    } else {
+      idleWatch.disable()
+    }
+  }
 }
 
 function handleResetProgress(): void {

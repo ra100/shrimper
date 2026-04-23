@@ -584,6 +584,32 @@ body {
   accent-color: var(--accent);
 }
 
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.checkbox-label.checkbox-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.checkbox-label input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.setting-hint {
+  margin: 4px 0 0 24px;
+  font-size: 0.82rem;
+  opacity: 0.7;
+}
+
 .text-input {
   width: 100%;
   padding: 8px 12px;
