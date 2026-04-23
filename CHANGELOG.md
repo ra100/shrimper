@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versions follow 
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-04-23
+
+### Fixed
+
+- 🐛 **Settings panel now scrolls** on short viewports — previously the backdrop scrolled the dashboard behind it, which could cause an accidental tap on "Reset All Progress".
+
 ## [0.4.0] — 2026-04-23
 
 ### Added
@@ -62,7 +68,8 @@ Initial public build.
 - Onboarding flow
 - Test notification button in settings
 
-[Unreleased]: https://github.com/ra100/shrimper/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/ra100/shrimper/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/ra100/shrimper/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/ra100/shrimper/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ra100/shrimper/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ra100/shrimper/compare/v0.1.0...v0.2.0

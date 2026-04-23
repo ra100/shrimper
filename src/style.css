@@ -395,6 +395,9 @@ body {
   opacity: 0;
   transition: opacity 0.3s ease;
   backdrop-filter: blur(4px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 20px;
 }
 
 .overlay.visible {
@@ -406,6 +409,7 @@ body {
   padding: 40px 32px;
   max-width: 420px;
   width: 100%;
+  margin: auto;
 }
 
 .overlay-emoji {
