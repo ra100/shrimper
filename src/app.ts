@@ -10,6 +10,15 @@ import {
 import { createIdleWatch, type IdleWatch } from './idle-watch'
 import { getPermissionState, requestPermission, showNotification } from './notifications'
 import {
+  consumeFreeSnoozeIfArmed,
+  consumeSkipIfArmed,
+  consumeStreakShieldIfArmed,
+  isGraceActive,
+  maybeGrantTokenForCombo,
+  type PerkId,
+  usePerk,
+} from './perks'
+import {
   isFirstRun,
   loadState,
   recordCompletion,
@@ -30,6 +39,7 @@ import {
   renderDashboard,
   renderOnboarding,
   renderOverlay,
+  renderPerks,
   renderSettings,
   showCustomThought,
   showUpdateBanner,
@@ -91,6 +101,7 @@ async function startDashboard(): Promise<void> {
       renderSettings(state, handleSettingsChange, handleResetProgress, handleTestNotification),
     onEnableNotifications: handleEnableNotifications,
     onTogglePause: handlePauseToggle,
+    onOpenPerks: handleOpenPerks,
   })
 
   const perm = getPermissionState()
@@ -171,6 +182,11 @@ function showReminderOverlay(tip: Tip, opts: { notify: boolean; flashTitle: bool
 function catchUpDecay(): void {
   const pending = state.pendingReminder
   if (!pending) return
+  // Grace Hour perk: decay paused.
+  if (isGraceActive(state)) {
+    if (state.pendingReminder) state.pendingReminder.lastDecayAt = Date.now()
+    return
+  }
   const anchor = pending.lastDecayAt ?? pending.firedAt
   const now = Date.now()
   const elapsed = now - anchor
@@ -220,6 +236,16 @@ function handleTestNotification(): void {
 }
 
 function handleReminder(): void {
+  // Skip perk: consume and re-schedule without showing overlay or penalty.
+  const skipResult = consumeSkipIfArmed(state)
+  if (skipResult.skipped) {
+    state = skipResult.state
+    saveState(state)
+    showCustomThought('⏭️ skipped, no harm done')
+    timer.scheduleNext()
+    persistSchedule()
+    return
+  }
   const tip = getRandomTip()
   showReminderOverlay(tip, { notify: true, flashTitle: true })
 }
@@ -233,16 +259,61 @@ function handleComplete(): void {
   clearDecayTimer()
   const firedAt = state.pendingReminder?.firedAt ?? 0
   const elapsedMs = firedAt > 0 ? Date.now() - firedAt : 0
-  const result = recordCompletion(state, hadSnooze, elapsedMs)
+
+  // Free Snooze: if armed AND user snoozed before completing, grant full +3.
+  let effectiveSnoozed = hadSnooze
+  if (hadSnooze) {
+    const free = consumeFreeSnoozeIfArmed(state)
+    if (free.free) {
+      state = free.state
+      effectiveSnoozed = false
+      showCustomThought('😴 snooze paid in full')
+    }
+  }
+
+  // Streak Shield: if gap-day missed streak, consume shield to preserve chain.
+  const preShieldState = state
+  const today = new Date().toISOString().slice(0, 10)
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)
+  const last = preShieldState.progress.lastCompletionDate
+  if (
+    last !== '' &&
+    last !== today &&
+    last !== yesterday &&
+    preShieldState.activePerks.streakShieldHeld &&
+    preShieldState.progress.streak > 0
+  ) {
+    const consumed = consumeStreakShieldIfArmed(preShieldState)
+    state = {
+      ...consumed.state,
+      progress: { ...consumed.state.progress, lastCompletionDate: yesterday },
+    }
+    showCustomThought('🔗 shield saved the streak!')
+  }
+
+  const result = recordCompletion(state, effectiveSnoozed, elapsedMs)
   state = result.state
   state.pendingReminder = null
+  // Clear lastIgnore on successful completion — can't rewind after recovery.
+  if (state.progress.lastIgnore) {
+    state = { ...state, progress: { ...state.progress, lastIgnore: null } }
+  }
+
+  // Perk token earn — every N completions-in-a-row grants one (capped).
+  const tokenResult = maybeGrantTokenForCombo(state)
+  state = tokenResult.state
+
   escalation = deescalateOnComplete(escalation, state.settings.maxInterval)
   hideOverlay()
   updateStats(state)
 
   const shrimpEl = getShrimpEl()
   if (shrimpEl) flashShrimp(shrimpEl, 'bounce')
-  showCustomThought('ahhhh 🫠')
+  if (tokenResult.granted) {
+    showCustomThought('🎟️ perk token earned!')
+  } else {
+    showCustomThought('ahhhh 🫠')
+  }
 
   if (result.unlocked.length > 0) {
     celebrate(result.unlocked)
@@ -273,7 +344,8 @@ function handleSnooze(minutes: number): void {
 function handleDismiss(): void {
   stopTitleFlash()
   clearDecayTimer()
-  state = recordIgnored(state)
+  const tipId = state.pendingReminder?.tipId
+  state = recordIgnored(state, tipId)
   state.pendingReminder = null
   escalation = escalateOnIgnore(escalation, state.settings.minInterval)
   hideOverlay()
@@ -285,6 +357,50 @@ function handleDismiss(): void {
   hadSnooze = false
   timer.scheduleNext()
   persistSchedule()
+}
+
+function handleOpenPerks(): void {
+  renderPerks(state, handleUsePerk)
+}
+
+function handleUsePerk(id: PerkId): void {
+  const result = usePerk(state, id)
+  if (!result.applied) return
+  state = result.state
+  saveState(state)
+  updateStats(state)
+
+  const effect = result.effect
+  if (!effect) return
+
+  switch (effect.kind) {
+    case 'firstAid':
+      if (getShrimpEl()) flashShrimp(getShrimpEl() as HTMLElement, 'bounce')
+      showCustomThought('🩹 posture patched up')
+      break
+    case 'streakShield':
+      showCustomThought('🔗 streak shield armed')
+      break
+    case 'rewind': {
+      // If rewind restored a pending reminder, re-show the overlay.
+      if (effect.restoredPending) {
+        const tip = getTipById(effect.tipId)
+        if (tip) showReminderOverlay(tip, { notify: false, flashTitle: false })
+      }
+      if (getShrimpEl()) flashShrimp(getShrimpEl() as HTMLElement, 'bounce')
+      showCustomThought('⏪ rewound')
+      break
+    }
+    case 'freeSnooze':
+      showCustomThought('😴 next snooze is free')
+      break
+    case 'skip':
+      showCustomThought('⏭️ next reminder will be skipped')
+      break
+    case 'graceHour':
+      showCustomThought('⏸️ grace hour — decay paused')
+      break
+  }
 }
 
 async function handleEnableNotifications(): Promise<void> {

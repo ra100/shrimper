@@ -5,6 +5,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versions follow 
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-04-24
+
+### Added
+
+- 🎟️ **Perks system** — earn 1 perk token per 10 completions-in-a-row (cap 3), spend tokens from the new Perks button on the dashboard. Six consumable perks, all costing 1 token:
+  - 🩹 **First Aid** — restore posture to 50%
+  - 🔗 **Streak Shield** — survive one missed day without breaking your streak (arm in advance)
+  - ⏪ **Rewind** — within 5 min of ignoring a reminder, undo the penalty and restore the combo
+  - 😴 **Free Snooze** — your next snooze counts as a full completion (+3)
+  - ⏭️ **Skip** — the next reminder fires silently; no penalty, no streak break
+  - ⏸️ **Grace Hour** — pause auto-decay for 1 hour (reminders keep firing)
+- Schema bump **v2 → v3** with non-destructive migration: existing streaks, condition, and achievements preserved; `perkTokens: 0` added.
+
+### Fixed
+
+- 🐛 **Ambient bubbles now float above the shrimp** instead of being painted behind it. The animated character's `transform` established a stacking context that swallowed the bubble layer; explicit `z-index` on `.bubble-layer` restores the "rising in front of Kevin" effect.
+
 ## [0.4.1] — 2026-04-23
 
 ### Fixed
@@ -68,7 +85,8 @@ Initial public build.
 - Onboarding flow
 - Test notification button in settings
 
-[Unreleased]: https://github.com/ra100/shrimper/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/ra100/shrimper/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/ra100/shrimper/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/ra100/shrimper/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/ra100/shrimper/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ra100/shrimper/compare/v0.2.0...v0.3.0

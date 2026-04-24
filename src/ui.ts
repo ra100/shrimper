@@ -2,6 +2,7 @@ import { ACHIEVEMENT_META, ACHIEVEMENT_ORDER } from './achievements'
 import { APP_VERSION, renderChangelogModal } from './changelog'
 import { renderShrimp, updateShrimp } from './characters/shrimp'
 import { getPermissionState } from './notifications'
+import { getPerkUsability, PERK_META, PERK_ORDER, PERK_TOKEN_CAP, type PerkId } from './perks'
 import type { ShrimperState } from './state'
 import { getThought } from './thoughts'
 import { getApproxTimeRemaining, type ReminderTimer } from './timer'
@@ -133,6 +134,7 @@ export function renderDashboard(
     onOpenSettings: () => void
     onEnableNotifications: () => void
     onTogglePause: () => void
+    onOpenPerks: () => void
   },
 ): void {
   const app = qs<HTMLDivElement>('#app')
@@ -141,9 +143,14 @@ export function renderDashboard(
   const notifPerm = getPermissionState()
   const showBanner = notifPerm !== 'granted' && notifPerm !== 'unsupported'
 
+  const tokens = state.progress.perkTokens
   app.innerHTML = `
     <div class="dashboard">
       <button class="settings-btn" id="settings-btn" aria-label="Settings">⚙️</button>
+      <button class="perks-btn" id="perks-btn" aria-label="Perks">
+        <span class="perks-btn-icon">🎟️</span>
+        <span class="perks-btn-count">${tokens}/${PERK_TOKEN_CAP}</span>
+      </button>
 
       ${
         showBanner
@@ -207,6 +214,7 @@ export function renderDashboard(
   if (shrimpEl) updateShrimp(shrimpEl, condition)
 
   byId('settings-btn').addEventListener('click', handlers.onOpenSettings)
+  byId('perks-btn').addEventListener('click', handlers.onOpenPerks)
   byId('btn-pause').addEventListener('click', handlers.onTogglePause)
 
   const enableBtn = document.getElementById('btn-enable-notif')
@@ -319,8 +327,74 @@ export function updateStats(state: ShrimperState): void {
   const grid = document.getElementById('achievements-container')
   if (grid) grid.innerHTML = renderAchievementsGrid(state)
 
+  const tokenBadge = document.querySelector<HTMLElement>('.perks-btn-count')
+  if (tokenBadge) tokenBadge.textContent = `${state.progress.perkTokens}/${PERK_TOKEN_CAP}`
+
   const shrimpEl = document.getElementById('shrimp-character')
   if (shrimpEl) updateShrimp(shrimpEl, state.progress.condition)
+}
+
+export function renderPerks(state: ShrimperState, onUse: (id: PerkId) => void): void {
+  const existing = document.getElementById('perks-panel')
+  if (existing) existing.remove()
+
+  const tokens = state.progress.perkTokens
+  const panel = document.createElement('div')
+  panel.id = 'perks-panel'
+  panel.className = 'overlay'
+  panel.innerHTML = `
+    <div class="overlay-content perks-content">
+      <h2>🎟️ Perks</h2>
+      <p class="perks-header">Tokens: <strong>${tokens}/${PERK_TOKEN_CAP}</strong> · earn 1 per 10 completions in a row</p>
+      <div class="perks-grid">
+        ${PERK_ORDER.map((id) => {
+          const meta = PERK_META[id]
+          const usability = getPerkUsability(state, id)
+          const cls = usability.usable ? 'perk-card usable' : 'perk-card disabled'
+          const reason = usability.usable
+            ? ''
+            : `<span class="perk-reason">${escapeText(usability.reason ?? '')}</span>`
+          return `
+            <div class="${cls}" data-id="${id}">
+              <div class="perk-icon">${meta.icon}</div>
+              <div class="perk-body">
+                <div class="perk-name">${meta.name}</div>
+                <div class="perk-blurb">${meta.blurb}</div>
+                ${reason}
+              </div>
+              <button class="btn btn-small btn-perk-use" data-id="${id}" ${usability.usable ? '' : 'disabled'}>Use</button>
+            </div>
+          `
+        }).join('')}
+      </div>
+      <div class="overlay-actions">
+        <button class="btn btn-dismiss" id="btn-close-perks">Close</button>
+      </div>
+    </div>
+  `
+  document.body.appendChild(panel)
+  requestAnimationFrame(() => panel.classList.add('visible'))
+
+  panel.querySelectorAll<HTMLButtonElement>('.btn-perk-use').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id as PerkId | undefined
+      if (!id) return
+      onUse(id)
+      hidePerks()
+    })
+  })
+  byId('btn-close-perks').addEventListener('click', () => hidePerks())
+  panel.addEventListener('click', (e) => {
+    if (e.target === panel) hidePerks()
+  })
+}
+
+function hidePerks(): void {
+  const panel = document.getElementById('perks-panel')
+  if (panel) {
+    panel.classList.remove('visible')
+    setTimeout(() => panel.remove(), 300)
+  }
 }
 
 export function renderSettings(

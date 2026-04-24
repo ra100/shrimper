@@ -20,6 +20,20 @@ export type AchievementId =
 
 export type Achievements = Record<AchievementId, string | null>
 
+export interface LastIgnore {
+  at: number
+  tipId: string
+  conditionBefore: number
+  completionsInRowBefore: number
+}
+
+export interface ActivePerks {
+  skipNext: boolean
+  freeSnoozeArmed: boolean
+  graceUntil: number // epoch ms; 0 when inactive
+  streakShieldHeld: boolean
+}
+
 export interface ShrimperProgress {
   condition: number // 0..100
   totalCompletions: number
@@ -28,6 +42,8 @@ export interface ShrimperProgress {
   lastCompletionDate: string // YYYY-MM-DD or ""
   completionsInRow: number
   achievements: Achievements
+  perkTokens: number // 0..3
+  lastIgnore: LastIgnore | null
 }
 
 export interface PendingReminder {
@@ -37,15 +53,16 @@ export interface PendingReminder {
 }
 
 export interface ShrimperState {
-  version: 2
+  version: 3
   settings: ShrimperSettings
   progress: ShrimperProgress
   pendingReminder: PendingReminder | null
   nextFireTime: number
+  activePerks: ActivePerks
 }
 
 const STORAGE_KEY = 'shrimper-state'
-const SCHEMA_VERSION = 2 as const
+const SCHEMA_VERSION = 3 as const
 
 const DEFAULT_SETTINGS: ShrimperSettings = {
   minInterval: 15,
@@ -68,6 +85,13 @@ const DEFAULT_ACHIEVEMENTS: Achievements = {
   speedShrimp: null,
 }
 
+const DEFAULT_ACTIVE_PERKS: ActivePerks = {
+  skipNext: false,
+  freeSnoozeArmed: false,
+  graceUntil: 0,
+  streakShieldHeld: false,
+}
+
 const DEFAULT_PROGRESS: ShrimperProgress = {
   condition: 50,
   totalCompletions: 0,
@@ -76,6 +100,8 @@ const DEFAULT_PROGRESS: ShrimperProgress = {
   lastCompletionDate: '',
   completionsInRow: 0,
   achievements: { ...DEFAULT_ACHIEVEMENTS },
+  perkTokens: 0,
+  lastIgnore: null,
 }
 
 function freshState(): ShrimperState {
@@ -85,6 +111,7 @@ function freshState(): ShrimperState {
     progress: { ...DEFAULT_PROGRESS, achievements: { ...DEFAULT_ACHIEVEMENTS } },
     pendingReminder: null,
     nextFireTime: 0,
+    activePerks: { ...DEFAULT_ACTIVE_PERKS },
   }
 }
 
@@ -93,7 +120,9 @@ export function loadState(): ShrimperState {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return freshState()
     const parsed = JSON.parse(raw)
-    if (parsed?.version !== SCHEMA_VERSION) return freshState()
+    const v = parsed?.version
+    if (v !== 2 && v !== SCHEMA_VERSION) return freshState()
+    // v2 → v3 migration: preserve progress, add perk fields with defaults.
     return {
       version: SCHEMA_VERSION,
       settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
@@ -101,9 +130,12 @@ export function loadState(): ShrimperState {
         ...DEFAULT_PROGRESS,
         ...parsed.progress,
         achievements: { ...DEFAULT_ACHIEVEMENTS, ...(parsed.progress?.achievements ?? {}) },
+        perkTokens: parsed.progress?.perkTokens ?? 0,
+        lastIgnore: parsed.progress?.lastIgnore ?? null,
       },
       pendingReminder: parsed.pendingReminder ?? null,
       nextFireTime: parsed.nextFireTime ?? 0,
+      activePerks: { ...DEFAULT_ACTIVE_PERKS, ...(parsed.activePerks ?? {}) },
     }
   } catch {
     return freshState()
@@ -125,6 +157,7 @@ export function resetProgress(state: ShrimperState): ShrimperState {
     progress: { ...DEFAULT_PROGRESS, achievements: { ...DEFAULT_ACHIEVEMENTS } },
     pendingReminder: null,
     nextFireTime: 0,
+    activePerks: { ...DEFAULT_ACTIVE_PERKS },
   }
 }
 
@@ -222,13 +255,22 @@ export function recordCompletion(
   }
 }
 
-export function recordIgnored(state: ShrimperState): ShrimperState {
+export function recordIgnored(state: ShrimperState, tipId?: string): ShrimperState {
+  const lastIgnore: LastIgnore | null = tipId
+    ? {
+        at: Date.now(),
+        tipId,
+        conditionBefore: state.progress.condition,
+        completionsInRowBefore: state.progress.completionsInRow,
+      }
+    : state.progress.lastIgnore
   return {
     ...state,
     progress: {
       ...state.progress,
       condition: clamp(state.progress.condition - 4, 0, 100),
       completionsInRow: 0,
+      lastIgnore,
     },
   }
 }
