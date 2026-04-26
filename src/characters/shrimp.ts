@@ -1,7 +1,7 @@
 /**
- * Shrimp character: 13-frame posture progression sprite.
- * Frame 0 = worst (crying/pain). Frame 12 = best (celebration).
- * Condition (0..100) → frame index (0..12).
+ * Shrimp character: 16-frame posture progression sprite.
+ * Frame 0 = worst (crying/pain). Frame 15 = best (celebration).
+ * Condition (0..100) → frame index (0..15).
  */
 
 import s00 from '../assets/shrimp/stage-00.png'
@@ -17,8 +17,28 @@ import s09 from '../assets/shrimp/stage-09.png'
 import s10 from '../assets/shrimp/stage-10.png'
 import s11 from '../assets/shrimp/stage-11.png'
 import s12 from '../assets/shrimp/stage-12.png'
+import s13 from '../assets/shrimp/stage-13.png'
+import s14 from '../assets/shrimp/stage-14.png'
+import s15 from '../assets/shrimp/stage-15.png'
 
-const FRAMES: readonly string[] = [s00, s01, s02, s03, s04, s05, s06, s07, s08, s09, s10, s11, s12]
+const FRAMES: readonly string[] = [
+  s00,
+  s01,
+  s02,
+  s03,
+  s04,
+  s05,
+  s06,
+  s07,
+  s08,
+  s09,
+  s10,
+  s11,
+  s12,
+  s13,
+  s14,
+  s15,
+]
 
 const FRAME_COUNT = FRAMES.length
 

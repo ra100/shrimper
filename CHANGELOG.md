@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versions follow 
 
 ## [Unreleased]
 
+## [0.5.1] — 2026-04-26
+
+### Changed
+
+- 🎨 **New shrimp sprite** — 16-frame posture progression (up from 13), freshly re-rendered with consistent desk + monitor anchor across all stages. Frame 0 = worst (crying), frame 15 = best (heart celebration).
+
 ## [0.5.0] — 2026-04-24
 
 ### Added
