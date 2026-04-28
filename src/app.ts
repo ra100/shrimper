@@ -53,6 +53,7 @@ let escalation: EscalationState
 let timer: ReminderTimer
 let snoozeCount = 0
 let hadSnooze = false
+let snoozedTipId: string | null = null
 let decayTimerId: ReturnType<typeof setTimeout> | null = null
 let idleWatch: IdleWatch | null = null
 let lockedNextFire = 0
@@ -147,8 +148,13 @@ function persistSchedule(): void {
 }
 
 function showReminderOverlay(tip: Tip, opts: { notify: boolean; flashTitle: boolean }): void {
-  snoozeCount = 0
-  hadSnooze = false
+  // Preserve snoozeCount/hadSnooze across snooze → re-fire for the same tip
+  // so the MAX_SNOOZES cap and +1 snoozed-completion bonus still apply.
+  if (snoozedTipId !== tip.id) {
+    snoozeCount = 0
+    hadSnooze = false
+  }
+  snoozedTipId = null
 
   if (opts.notify) {
     showNotification(`${tip.emoji} ${state.settings.shrimpName}: ${tip.text}`, getQuipForTip(tip))
@@ -246,7 +252,12 @@ function handleReminder(): void {
     persistSchedule()
     return
   }
-  const tip = getRandomTip()
+  // If user snoozed, re-surface the same tip instead of rolling a new one.
+  let tip: Tip | null = null
+  if (snoozedTipId) {
+    tip = getTipById(snoozedTipId)
+  }
+  if (!tip) tip = getRandomTip()
   showReminderOverlay(tip, { notify: true, flashTitle: true })
 }
 
@@ -321,6 +332,7 @@ function handleComplete(): void {
 
   hadSnooze = false
   snoozeCount = 0
+  snoozedTipId = null
   timer.scheduleNext()
   persistSchedule()
 }
@@ -330,11 +342,14 @@ function handleSnooze(minutes: number): void {
   clearDecayTimer()
   snoozeCount++
   hadSnooze = true
+  const snoozedId = state.pendingReminder?.tipId ?? null
   state = recordSnooze(state)
   if (snoozeCount >= MAX_SNOOZES) {
     handleDismiss()
     return
   }
+  // Remember which tip was snoozed so the re-fire shows the same reminder.
+  snoozedTipId = snoozedId
   state.pendingReminder = null
   hideOverlay()
   timer.snooze(minutes)
@@ -355,6 +370,8 @@ function handleDismiss(): void {
   if (shrimpEl) flashShrimp(shrimpEl, 'deflate')
 
   hadSnooze = false
+  snoozeCount = 0
+  snoozedTipId = null
   timer.scheduleNext()
   persistSchedule()
 }

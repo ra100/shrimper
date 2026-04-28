@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versions follow 
 
 ## [Unreleased]
 
+## [0.5.3] — 2026-04-28
+
+### Fixed
+
+- 🐛 **Snooze re-shows the same reminder** — snoozed tips now re-surface when the snooze timer expires instead of rolling a random new one.
+
 ## [0.5.2] — 2026-04-28
 
 ### Fixed
