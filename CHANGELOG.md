@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versions follow 
 
 ## [Unreleased]
 
+## [0.5.2] — 2026-04-28
+
+### Fixed
+
+- 🐛 **Timer reschedules when interval settings change** — saving new min/max intervals now cancels the old random delay and picks a fresh one from the new range, instead of running out the old one.
+- 🐛 **Dashboard fits small viewports** — tightened spacing, shrimp stage, and achievement grid on heights ≤780px so the Pause/countdown control stays on-screen without scrolling.
+
 ## [0.5.1] — 2026-04-26
 
 ### Changed

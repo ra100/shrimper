@@ -31,7 +31,7 @@ import {
   togglePaused,
 } from './state'
 import { startTitleFlash, stopTitleFlash } from './tab-indicator'
-import { createTimer, type ReminderTimer } from './timer'
+import { createTimer, getApproxTimeRemaining, type ReminderTimer } from './timer'
 import { getQuipForTip, getRandomTip, getTipById, type Tip } from './tips'
 import {
   hideOverlay,
@@ -501,11 +501,24 @@ function handleSettingsChange(
   pauseOnLock: boolean,
 ): void {
   const prevPauseOnLock = state.settings.pauseOnLock
+  const prevMin = state.settings.minInterval
+  const prevMax = state.settings.maxInterval
   state.settings.minInterval = minInterval
   state.settings.maxInterval = maxInterval
   state.settings.shrimpName = shrimpName
   state.settings.pauseOnLock = pauseOnLock
   escalation = createEscalation(minInterval, maxInterval)
+
+  // Reschedule timer when intervals change, so the new range takes effect
+  // immediately instead of waiting out the old random delay.
+  const intervalsChanged = minInterval !== prevMin || maxInterval !== prevMax
+  if (intervalsChanged && !state.settings.paused && !state.pendingReminder) {
+    timer.scheduleNext()
+    state.nextFireTime = timer.getNextFireTime()
+    const el = document.getElementById('countdown')
+    if (el) el.textContent = getApproxTimeRemaining(state.nextFireTime)
+  }
+
   saveState(state)
   hideSettings()
   const nameEl = document.getElementById('shrimp-name')

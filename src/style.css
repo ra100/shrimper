@@ -979,3 +979,77 @@ body {
     padding: 32px 20px;
   }
 }
+
+/* Short viewports: compact layout so everything fits without scroll */
+@media (max-height: 780px) {
+  #app {
+    padding: 8px 14px;
+  }
+
+  .dashboard {
+    gap: 8px;
+  }
+
+  .shrimp-stage {
+    width: 170px;
+    height: 120px;
+  }
+
+  .shrimp-character {
+    width: 120px;
+    height: 120px;
+  }
+
+  .character-area {
+    margin-bottom: 0;
+    gap: 2px;
+  }
+
+  .speech-bubble {
+    min-height: 1.2em;
+    font-size: 0.8rem;
+  }
+
+  .shrimp-name {
+    font-size: 0.8rem;
+    margin-top: 0;
+  }
+
+  .condition-section {
+    margin-top: 0;
+  }
+
+  .condition-label {
+    font-size: 0.8rem;
+    margin-top: 4px;
+  }
+
+  .achievements-grid {
+    gap: 5px;
+  }
+
+  .achievement-tile {
+    padding: 5px 2px;
+    font-size: 0.6rem;
+  }
+
+  .ach-icon {
+    font-size: 1.1rem;
+  }
+
+  .stats {
+    gap: 16px;
+  }
+
+  .stat-value {
+    font-size: 1.4rem;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+  }
+
+  .next-reminder {
+    padding: 10px;
+  }
+}
