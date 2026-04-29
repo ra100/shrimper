@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versions follow 
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-04-29
+
+### Added
+
+- 🎯 **Daily challenges** — one bonus challenge per day (deterministic from date). Complete it for a free perk token. Challenges: 5-a-day, 3-in-a-row, reach 80% posture, early bird (before 9am), 7-a-day, perfect posture. Card shows on dashboard with claim button.
+- 📈 **Weekly stats panel** — new stats button on the dashboard opens an overlay with a CSS-only bar chart of the last 7 days' completions. Each bar's opacity reflects that day's posture condition. Summary row shows best day, weekly total, and average condition.
+- 📊 **Daily history tracking** — completions, condition, and streak are snapshotted to `shrimper-history` in localStorage on every completion. Gap days are backfilled with zeroes. Capped at 90 days.
+- 🛡️ **Streak shield visual** — armed streak shield shows ice-blue glow + 🛡️ icon on the streak counter with a subtle pulse animation.
+- 🕐 **Time-of-day thoughts** — shrimp now says different things based on time: morning coffee vibes, post-lunch slouch alerts, late-night owl encouragement. 17 new time-aware thoughts across 6 time slots.
+
 ## [0.6.0] — 2026-04-29
 
 ### Added
@@ -110,7 +120,12 @@ Initial public build.
 - Onboarding flow
 - Test notification button in settings
 
-[Unreleased]: https://github.com/ra100/shrimper/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/ra100/shrimper/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/ra100/shrimper/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/ra100/shrimper/compare/v0.5.3...v0.6.0
+[0.5.3]: https://github.com/ra100/shrimper/compare/v0.5.2...v0.5.3
+[0.5.2]: https://github.com/ra100/shrimper/compare/v0.5.1...v0.5.2
+[0.5.1]: https://github.com/ra100/shrimper/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/ra100/shrimper/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/ra100/shrimper/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/ra100/shrimper/compare/v0.3.0...v0.4.0

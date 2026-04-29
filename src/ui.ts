@@ -1,6 +1,8 @@
 import { ACHIEVEMENT_META, ACHIEVEMENT_ORDER } from './achievements'
 import { APP_VERSION, renderChangelogModal } from './changelog'
 import { renderShrimp, updateShrimp } from './characters/shrimp'
+import { getDailyChallengeState, getTodayChallenge } from './daily-challenge'
+import { type DailySnapshot, getHistory } from './history'
 import { getPermissionState } from './notifications'
 import { getPerkUsability, PERK_META, PERK_ORDER, PERK_TOKEN_CAP, type PerkId } from './perks'
 import type { ShrimperState } from './state'
@@ -127,6 +129,44 @@ function renderAchievementsGrid(state: ShrimperState): string {
   `
 }
 
+function renderDailyChallengeCard(): string {
+  const challenge = getTodayChallenge()
+  const cs = getDailyChallengeState()
+  const completedCls = cs.completed ? ' challenge-complete' : ''
+  let action = ''
+  if (cs.completed && !cs.claimed) {
+    action =
+      '<button class="btn btn-small btn-challenge-claim" id="btn-claim-challenge">Claim reward!</button>'
+  } else if (cs.claimed) {
+    action = '<span class="challenge-claimed">Claimed!</span>'
+  }
+  return `
+    <div class="daily-challenge${completedCls}" id="daily-challenge">
+      <div class="challenge-header">
+        <span class="challenge-label">Daily Challenge</span>
+        <span class="challenge-emoji">${challenge.emoji}</span>
+      </div>
+      <div class="challenge-text">${escapeText(challenge.text)}</div>
+      ${action}
+    </div>
+  `
+}
+
+export function updateDailyChallenge(onClaim: () => void): void {
+  const container = document.getElementById('daily-challenge')
+  if (!container) return
+  const wrapper = container.parentElement
+  if (!wrapper) return
+  // Re-render the card in place
+  const tmp = document.createElement('div')
+  tmp.innerHTML = renderDailyChallengeCard()
+  const newCard = tmp.firstElementChild as HTMLElement
+  if (!newCard) return
+  container.replaceWith(newCard)
+  const claimBtn = newCard.querySelector<HTMLButtonElement>('#btn-claim-challenge')
+  if (claimBtn) claimBtn.addEventListener('click', onClaim)
+}
+
 export function renderDashboard(
   state: ShrimperState,
   timer: ReminderTimer,
@@ -135,6 +175,8 @@ export function renderDashboard(
     onEnableNotifications: () => void
     onTogglePause: () => void
     onOpenPerks: () => void
+    onOpenStats: () => void
+    onClaimChallenge: () => void
   },
 ): void {
   const app = qs<HTMLDivElement>('#app')
@@ -147,6 +189,7 @@ export function renderDashboard(
   app.innerHTML = `
     <div class="dashboard">
       <button class="settings-btn" id="settings-btn" aria-label="Settings">⚙️</button>
+      <button class="stats-btn" id="stats-btn" aria-label="Weekly Stats">📈</button>
       <button class="perks-btn" id="perks-btn" aria-label="Perks">
         <span class="perks-btn-icon">🎟️</span>
         <span class="perks-btn-count">${tokens}/${PERK_TOKEN_CAP}</span>
@@ -184,13 +227,15 @@ export function renderDashboard(
         <div class="condition-label">Posture ${condition}%</div>
       </div>
 
+      ${renderDailyChallengeCard()}
+
       <div class="stats" id="stats">
         <div class="stat">
           <span class="stat-value" id="stat-today">${state.progress.completionsToday}</span>
           <span class="stat-label">Today</span>
         </div>
-        <div class="stat">
-          <span class="stat-value" id="stat-streak">${state.progress.streak}</span>
+        <div class="stat${state.activePerks.streakShieldHeld ? ' streak-shielded' : ''}" id="stat-streak-container">
+          <span class="stat-value" id="stat-streak">${state.progress.streak}${state.activePerks.streakShieldHeld ? ' <span class="streak-shield-icon" aria-label="Streak shield active">🛡️</span>' : ''}</span>
           <span class="stat-label">Streak</span>
         </div>
         <div class="stat">
@@ -214,12 +259,18 @@ export function renderDashboard(
   if (shrimpEl) updateShrimp(shrimpEl, condition)
 
   byId('settings-btn').addEventListener('click', handlers.onOpenSettings)
+  byId('stats-btn').addEventListener('click', handlers.onOpenStats)
   byId('perks-btn').addEventListener('click', handlers.onOpenPerks)
   byId('btn-pause').addEventListener('click', handlers.onTogglePause)
 
   const enableBtn = document.getElementById('btn-enable-notif')
   if (enableBtn) {
     enableBtn.addEventListener('click', handlers.onEnableNotifications)
+  }
+
+  const claimBtn = document.getElementById('btn-claim-challenge')
+  if (claimBtn) {
+    claimBtn.addEventListener('click', handlers.onClaimChallenge)
   }
 
   if (countdownInterval) clearInterval(countdownInterval)
@@ -313,7 +364,16 @@ export function updateStats(state: ShrimperState): void {
   if (today) today.textContent = String(state.progress.completionsToday)
 
   const streak = document.getElementById('stat-streak')
-  if (streak) streak.textContent = String(state.progress.streak)
+  if (streak) {
+    streak.innerHTML = state.activePerks.streakShieldHeld
+      ? `${state.progress.streak} <span class="streak-shield-icon" aria-label="Streak shield active">🛡️</span>`
+      : String(state.progress.streak)
+  }
+
+  const streakContainer = document.getElementById('stat-streak-container')
+  if (streakContainer) {
+    streakContainer.classList.toggle('streak-shielded', state.activePerks.streakShieldHeld)
+  }
 
   const total = document.getElementById('stat-total')
   if (total) total.textContent = String(state.progress.totalCompletions)
@@ -597,4 +657,86 @@ export function renderOnboarding(
     const name = nameInput.value.trim() || 'Kevin'
     onComplete(parseInt(minSlider.value, 10), parseInt(maxSlider.value, 10), name)
   })
+}
+
+function dayAbbrev(dateStr: string): string {
+  const d = new Date(`${dateStr}T12:00:00`)
+  return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]
+}
+
+function buildBarHtml(snapshots: DailySnapshot[], maxCompletions: number): string {
+  return snapshots
+    .map((snap) => {
+      const pct = maxCompletions > 0 ? Math.round((snap.completions / maxCompletions) * 100) : 0
+      // Minimum visible bar of 4px when there are completions
+      const height = snap.completions > 0 ? `max(4px, ${pct}%)` : '0%'
+      // Opacity scales with condition: 30% base + up to 70% proportional
+      const opacity = 0.3 + (snap.condition / 100) * 0.7
+      return `
+        <div class="stats-bar">
+          <div class="stats-bar-fill" style="height: ${height}; opacity: ${opacity}"></div>
+          <span class="stats-bar-label">${dayAbbrev(snap.date)}</span>
+        </div>
+      `
+    })
+    .join('')
+}
+
+export function renderStats(): void {
+  const existing = document.getElementById('stats-panel')
+  if (existing) existing.remove()
+
+  const week = getHistory(7)
+  const maxCompletions = Math.max(1, ...week.map((s) => s.completions))
+
+  // Summary calculations
+  const totalWeek = week.reduce((sum, s) => sum + s.completions, 0)
+  const daysWithCondition = week.filter((s) => s.completions > 0 || s.condition > 0)
+  const avgCondition =
+    daysWithCondition.length > 0
+      ? Math.round(
+          daysWithCondition.reduce((sum, s) => sum + s.condition, 0) / daysWithCondition.length,
+        )
+      : 0
+
+  let bestDay = week[0]
+  for (const snap of week) {
+    if (snap.completions > bestDay.completions) bestDay = snap
+  }
+
+  const panel = document.createElement('div')
+  panel.id = 'stats-panel'
+  panel.className = 'overlay'
+  panel.innerHTML = `
+    <div class="overlay-content stats-content">
+      <h2>Weekly Stats</h2>
+      <div class="stats-chart">
+        ${buildBarHtml(week, maxCompletions)}
+      </div>
+      <div class="stats-summary">
+        <span>Best: ${bestDay.completions} (${dayAbbrev(bestDay.date)})</span>
+        <span>Week: ${totalWeek}</span>
+        <span>Avg: ${avgCondition}%</span>
+      </div>
+      <div class="overlay-actions">
+        <button class="btn btn-dismiss" id="btn-close-stats">Close</button>
+      </div>
+    </div>
+  `
+
+  document.body.appendChild(panel)
+  requestAnimationFrame(() => panel.classList.add('visible'))
+
+  byId('btn-close-stats').addEventListener('click', () => hideStats())
+  panel.addEventListener('click', (e) => {
+    if (e.target === panel) hideStats()
+  })
+}
+
+function hideStats(): void {
+  const panel = document.getElementById('stats-panel')
+  if (panel) {
+    panel.classList.remove('visible')
+    setTimeout(() => panel.remove(), 300)
+  }
 }

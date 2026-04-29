@@ -2,6 +2,8 @@ import { celebrate } from './achievements'
 import {
   trackAchievement,
   trackComplete,
+  trackDailyChallengeClaim,
+  trackDailyChallengeComplete,
   trackDismiss,
   trackPause,
   trackPerk,
@@ -9,12 +11,14 @@ import {
 } from './analytics'
 import { hasSeenCurrentVersion, markVersionSeen, renderChangelogModal } from './changelog'
 import { flashShrimp } from './characters/shrimp'
+import { checkAndUpdateChallenge, claimChallengeReward, getTodayChallenge } from './daily-challenge'
 import {
   createEscalation,
   deescalateOnComplete,
   type EscalationState,
   escalateOnIgnore,
 } from './escalation'
+import { recordDaily } from './history'
 import { createIdleWatch, type IdleWatch } from './idle-watch'
 import { getPermissionState, requestPermission, showNotification } from './notifications'
 import {
@@ -23,6 +27,7 @@ import {
   consumeStreakShieldIfArmed,
   isGraceActive,
   maybeGrantTokenForCombo,
+  PERK_TOKEN_CAP,
   type PerkId,
   usePerk,
 } from './perks'
@@ -49,8 +54,10 @@ import {
   renderOverlay,
   renderPerks,
   renderSettings,
+  renderStats,
   showCustomThought,
   showUpdateBanner,
+  updateDailyChallenge,
   updatePauseButton,
   updateStats,
 } from './ui'
@@ -111,6 +118,8 @@ async function startDashboard(): Promise<void> {
     onEnableNotifications: handleEnableNotifications,
     onTogglePause: handlePauseToggle,
     onOpenPerks: handleOpenPerks,
+    onOpenStats: () => renderStats(),
+    onClaimChallenge: handleClaimChallenge,
   })
 
   const perm = getPermissionState()
@@ -323,23 +332,34 @@ function handleComplete(): void {
   const tokenResult = maybeGrantTokenForCombo(state)
   state = tokenResult.state
 
+  // Daily challenge check
+  const challengeResult = checkAndUpdateChallenge(state.progress)
+
   escalation = deescalateOnComplete(escalation, state.settings.maxInterval)
   hideOverlay()
   updateStats(state)
 
   const shrimpEl = getShrimpEl()
   if (shrimpEl) flashShrimp(shrimpEl, 'bounce')
-  if (tokenResult.granted) {
-    showCustomThought('🎟️ perk token earned!')
+  if (challengeResult.justCompleted) {
+    const challenge = getTodayChallenge()
+    trackDailyChallengeComplete(challenge.id)
+    showCustomThought('daily challenge complete!')
+  } else if (tokenResult.granted) {
+    showCustomThought('perk token earned!')
   } else {
-    showCustomThought('ahhhh 🫠')
+    showCustomThought('ahhhh')
   }
+
+  // Refresh daily challenge card in case it just completed
+  updateDailyChallenge(handleClaimChallenge)
 
   if (result.unlocked.length > 0) {
     celebrate(result.unlocked)
     for (const id of result.unlocked) trackAchievement(id)
   }
 
+  recordDaily(state)
   trackComplete(completedTipId, hadSnooze)
   hadSnooze = false
   snoozeCount = 0
@@ -387,6 +407,25 @@ function handleDismiss(): void {
   snoozedTipId = null
   timer.scheduleNext()
   persistSchedule()
+}
+
+function handleClaimChallenge(): void {
+  const challenge = getTodayChallenge()
+  const claimed = claimChallengeReward()
+  if (!claimed) return
+
+  // Grant 1 perk token, capped
+  if (state.progress.perkTokens < PERK_TOKEN_CAP) {
+    state = {
+      ...state,
+      progress: { ...state.progress, perkTokens: state.progress.perkTokens + 1 },
+    }
+  }
+  saveState(state)
+  updateStats(state)
+  updateDailyChallenge(handleClaimChallenge)
+  trackDailyChallengeClaim(challenge.id)
+  showCustomThought('perk token claimed!')
 }
 
 function handleOpenPerks(): void {

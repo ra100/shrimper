@@ -99,6 +99,76 @@ body {
   background: var(--border);
 }
 
+/* Stats button */
+.stats-btn {
+  position: absolute;
+  top: 0;
+  right: 40px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.stats-btn:hover {
+  background: var(--border);
+}
+
+/* Stats chart + overlay */
+.stats-content {
+  max-width: 420px;
+}
+
+.stats-content h2 {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.stats-chart {
+  display: flex;
+  gap: 4px;
+  height: 120px;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 8px;
+}
+
+.stats-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 32px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.stats-bar-fill {
+  width: 100%;
+  max-width: 36px;
+  background: var(--accent);
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
+}
+
+.stats-bar-label {
+  font-size: 0.65rem;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+
+.stats-summary {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--text-light);
+  margin-top: 12px;
+}
+
 /* Perks button + modal */
 .perks-btn {
   position: absolute;
@@ -320,6 +390,60 @@ body {
   color: var(--text-light);
 }
 
+/* Daily challenge */
+.daily-challenge {
+  width: 100%;
+  max-width: 320px;
+  padding: 12px 16px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.daily-challenge.challenge-complete {
+  border-style: solid;
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.challenge-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.challenge-label {
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-light);
+}
+
+.challenge-emoji { font-size: 1.2rem; }
+.challenge-text { font-weight: 500; }
+.challenge-claimed { color: var(--accent); font-weight: 600; font-size: 0.8rem; }
+
+.btn-challenge-claim {
+  margin-top: 8px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.2s;
+}
+
+.btn-challenge-claim:hover {
+  background: var(--accent-hover);
+  transform: scale(1.03);
+}
+
 /* Stats */
 .stats {
   display: flex;
@@ -343,6 +467,28 @@ body {
   color: var(--text-light);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+/* Streak shield indicator */
+.stat.streak-shielded {
+  border: 1px solid rgba(100, 180, 255, 0.3);
+  border-radius: 10px;
+  padding: 6px 12px;
+  animation: shield-pulse 2s ease-in-out infinite;
+}
+
+.streak-shield-icon {
+  font-size: 0.85em;
+  vertical-align: middle;
+}
+
+@keyframes shield-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(100, 180, 255, 0.25); }
+  50% { box-shadow: 0 0 12px rgba(100, 180, 255, 0.5); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat.streak-shielded { animation: none; box-shadow: 0 0 8px rgba(100, 180, 255, 0.4); }
 }
 
 /* Achievements grid */
@@ -1024,6 +1170,13 @@ body {
     margin-top: 4px;
   }
 
+  .daily-challenge {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+
+  .challenge-emoji { font-size: 1rem; }
+
   .achievements-grid {
     gap: 5px;
   }
@@ -1051,5 +1204,18 @@ body {
 
   .next-reminder {
     padding: 10px;
+  }
+
+  .stats-chart {
+    height: 80px;
+  }
+
+  .stats-bar {
+    min-width: 24px;
+  }
+
+  .stats-summary {
+    font-size: 0.72rem;
+    gap: 10px;
   }
 }

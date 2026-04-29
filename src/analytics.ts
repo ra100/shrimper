@@ -31,3 +31,11 @@ export function trackPerk(id: string): void {
 export function trackPause(paused: boolean): void {
   track(paused ? 'pause' : 'resume')
 }
+
+export function trackDailyChallengeComplete(id: string): void {
+  track('daily-challenge-complete', { id })
+}
+
+export function trackDailyChallengeClaim(id: string): void {
+  track('daily-challenge-claim', { id })
+}
