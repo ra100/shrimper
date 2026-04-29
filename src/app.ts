@@ -1,4 +1,12 @@
 import { celebrate } from './achievements'
+import {
+  trackAchievement,
+  trackComplete,
+  trackDismiss,
+  trackPause,
+  trackPerk,
+  trackSnooze,
+} from './analytics'
 import { hasSeenCurrentVersion, markVersionSeen, renderChangelogModal } from './changelog'
 import { flashShrimp } from './characters/shrimp'
 import {
@@ -302,6 +310,7 @@ function handleComplete(): void {
     showCustomThought('🔗 shield saved the streak!')
   }
 
+  const completedTipId = state.pendingReminder?.tipId ?? 'unknown'
   const result = recordCompletion(state, effectiveSnoozed, elapsedMs)
   state = result.state
   state.pendingReminder = null
@@ -328,8 +337,10 @@ function handleComplete(): void {
 
   if (result.unlocked.length > 0) {
     celebrate(result.unlocked)
+    for (const id of result.unlocked) trackAchievement(id)
   }
 
+  trackComplete(completedTipId, hadSnooze)
   hadSnooze = false
   snoozeCount = 0
   snoozedTipId = null
@@ -343,6 +354,7 @@ function handleSnooze(minutes: number): void {
   snoozeCount++
   hadSnooze = true
   const snoozedId = state.pendingReminder?.tipId ?? null
+  trackSnooze(snoozedId ?? 'unknown', minutes)
   state = recordSnooze(state)
   if (snoozeCount >= MAX_SNOOZES) {
     handleDismiss()
@@ -360,6 +372,7 @@ function handleDismiss(): void {
   stopTitleFlash()
   clearDecayTimer()
   const tipId = state.pendingReminder?.tipId
+  trackDismiss(tipId ?? 'unknown')
   state = recordIgnored(state, tipId)
   state.pendingReminder = null
   escalation = escalateOnIgnore(escalation, state.settings.minInterval)
@@ -383,6 +396,7 @@ function handleOpenPerks(): void {
 function handleUsePerk(id: PerkId): void {
   const result = usePerk(state, id)
   if (!result.applied) return
+  trackPerk(id)
   state = result.state
   saveState(state)
   updateStats(state)
@@ -495,6 +509,7 @@ function handleUnlock(lockedDurationMs: number): void {
 
 function handlePauseToggle(): void {
   state = togglePaused(state)
+  trackPause(state.settings.paused)
   if (state.settings.paused) {
     timer.stop()
     clearDecayTimer()

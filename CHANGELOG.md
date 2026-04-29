@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versions follow 
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-04-29
+
+### Added
+
+- 📊 **Umami analytics** — privacy-friendly usage tracking via Umami Cloud. Custom events for reminder complete/snooze/dismiss, achievement unlocks, perk usage, and pause/resume. No cookies, GDPR-clean.
+
 ## [0.5.3] — 2026-04-28
 
 ### Fixed
