@@ -31,6 +31,7 @@ import {
   type PerkId,
   usePerk,
 } from './perks'
+import { getMsUntilTransition, getNextActiveTime, isWithinSchedule } from './schedule'
 import {
   isFirstRun,
   loadState,
@@ -58,6 +59,7 @@ import {
   showCustomThought,
   showUpdateBanner,
   updateDailyChallenge,
+  updateNapState,
   updatePauseButton,
   updateStats,
 } from './ui'
@@ -70,6 +72,7 @@ let snoozeCount = 0
 let hadSnooze = false
 let snoozedTipId: string | null = null
 let decayTimerId: ReturnType<typeof setTimeout> | null = null
+let scheduleTransitionId: ReturnType<typeof setTimeout> | null = null
 let idleWatch: IdleWatch | null = null
 let lockedNextFire = 0
 const MAX_SNOOZES = 2
@@ -137,8 +140,19 @@ async function startDashboard(): Promise<void> {
   })
 
   initIdleWatch()
+  scheduleTransitionCheck()
 
   if (state.settings.paused) return
+
+  // If outside schedule on load, enter nap and clear stale pending reminders
+  if (!isScheduleActive()) {
+    if (state.pendingReminder) {
+      state.pendingReminder = null
+      saveState(state)
+    }
+    updateNapState(state, false, handleWakeOverride)
+    return
+  }
 
   // Resume pending reminder shown before reload
   if (state.pendingReminder) {
@@ -220,9 +234,12 @@ function catchUpDecay(): void {
   // to "now" so decay resumes from this moment rather than back-filling the gap.
   const ticks = Math.min(rawTicks, MAX_CATCHUP_TICKS)
   const sleptThrough = rawTicks > MAX_CATCHUP_TICKS
+  const before = state.progress.condition
   state = recordDecay(state, ticks)
+  const actualLoss = before - state.progress.condition
   if (state.pendingReminder) {
     state.pendingReminder.lastDecayAt = sleptThrough ? now : anchor + ticks * DECAY_INTERVAL_MS
+    state.pendingReminder.decayApplied = (state.pendingReminder.decayApplied ?? 0) + actualLoss
   }
   const shrimpEl = getShrimpEl()
   if (shrimpEl) flashShrimp(shrimpEl, 'deflate')
@@ -259,6 +276,18 @@ function handleTestNotification(): void {
 }
 
 function handleReminder(): void {
+  // Schedule gate: if outside work hours, defer to next active window
+  if (!isScheduleActive()) {
+    const next = getNextActiveTime(state.settings.schedule)
+    if (next) {
+      timer.resumeAt(next.getTime())
+    } else {
+      timer.stop()
+    }
+    persistSchedule()
+    return
+  }
+
   // Skip perk: consume and re-schedule without showing overlay or penalty.
   const skipResult = consumeSkipIfArmed(state)
   if (skipResult.skipped) {
@@ -287,6 +316,19 @@ function handleComplete(): void {
   clearDecayTimer()
   const firedAt = state.pendingReminder?.firedAt ?? 0
   const elapsedMs = firedAt > 0 ? Date.now() - firedAt : 0
+
+  // Refund any auto-decay applied while the overlay was open. Completing always
+  // restores slippage since overlay fire — penalty applies only to ignores.
+  const decayRefund = state.pendingReminder?.decayApplied ?? 0
+  if (decayRefund > 0) {
+    state = {
+      ...state,
+      progress: {
+        ...state.progress,
+        condition: Math.min(100, state.progress.condition + decayRefund),
+      },
+    }
+  }
 
   // Free Snooze: if armed AND user snoozed before completing, grant full +3.
   let effectiveSnoozed = hadSnooze
@@ -544,6 +586,77 @@ function handleUnlock(lockedDurationMs: number): void {
   }
   lockedNextFire = 0
   saveState(state)
+}
+
+function isScheduleActive(): boolean {
+  return isWithinSchedule(state.settings.schedule, state.wakeOverrideUntil)
+}
+
+function scheduleTransitionCheck(): void {
+  if (scheduleTransitionId !== null) {
+    clearTimeout(scheduleTransitionId)
+    scheduleTransitionId = null
+  }
+  if (!state.settings.schedule.enabled) return
+
+  const ms = getMsUntilTransition(state.settings.schedule, state.wakeOverrideUntil)
+  if (ms >= Number.MAX_SAFE_INTEGER) return
+
+  scheduleTransitionId = setTimeout(handleScheduleTransition, Math.min(ms + 500, 2_147_483_647))
+}
+
+function handleScheduleTransition(): void {
+  scheduleTransitionId = null
+  if (state.settings.paused) {
+    scheduleTransitionCheck()
+    return
+  }
+
+  const active = isScheduleActive()
+  if (active) {
+    enterActiveFromNap()
+  } else {
+    enterNap()
+  }
+  scheduleTransitionCheck()
+}
+
+function enterNap(): void {
+  // Don't interrupt an open overlay — just stop new reminders
+  if (!state.pendingReminder) {
+    timer.stop()
+    clearDecayTimer()
+    state.nextFireTime = 0
+    saveState(state)
+  }
+  updateNapState(state, false, handleWakeOverride)
+}
+
+function enterActiveFromNap(): void {
+  // Clear wake override — natural schedule resumed
+  if (state.wakeOverrideUntil > 0) {
+    state.wakeOverrideUntil = 0
+    saveState(state)
+  }
+  if (!state.pendingReminder && !state.settings.paused) {
+    timer.start()
+    persistSchedule()
+  }
+  updateNapState(state, true, handleWakeOverride)
+}
+
+function handleWakeOverride(): void {
+  const schedule = state.settings.schedule
+  const ms = getMsUntilTransition(schedule, 0)
+  state.wakeOverrideUntil = Date.now() + Math.min(ms, 2_147_483_647)
+  saveState(state)
+
+  if (!state.settings.paused && !state.pendingReminder) {
+    timer.start()
+    persistSchedule()
+  }
+  updateNapState(state, true, handleWakeOverride)
+  scheduleTransitionCheck()
 }
 
 function handlePauseToggle(): void {

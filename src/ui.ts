@@ -5,6 +5,7 @@ import { getDailyChallengeState, getTodayChallenge } from './daily-challenge'
 import { type DailySnapshot, getHistory } from './history'
 import { getPermissionState } from './notifications'
 import { getPerkUsability, PERK_META, PERK_ORDER, PERK_TOKEN_CAP, type PerkId } from './perks'
+import { getNextActiveTime } from './schedule'
 import type { ShrimperState } from './state'
 import { getThought } from './thoughts'
 import { getApproxTimeRemaining, type ReminderTimer } from './timer'
@@ -589,6 +590,51 @@ export function updatePauseButton(paused: boolean): void {
   if (btn) btn.textContent = paused ? '▶ Resume' : '⏸ Pause'
   const countdown = document.getElementById('countdown')
   if (countdown && paused) countdown.textContent = '⏸ Paused'
+}
+
+export function updateNapState(
+  state: ShrimperState,
+  isActive: boolean,
+  onWake?: () => void,
+): void {
+  const napOverlay = document.getElementById('nap-overlay')
+  const nextReminder = document.getElementById('next-reminder')
+
+  if (isActive) {
+    if (napOverlay) napOverlay.remove()
+    if (nextReminder) nextReminder.style.display = ''
+    return
+  }
+
+  // Show nap state
+  if (nextReminder) nextReminder.style.display = 'none'
+
+  if (!napOverlay) {
+    const dashboard = document.querySelector('.dashboard')
+    if (!dashboard) return
+
+    const next = getNextActiveTime(state.settings.schedule)
+    const timeStr = next
+      ? next.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : 'later'
+
+    const el = document.createElement('div')
+    el.id = 'nap-overlay'
+    el.className = 'nap-overlay'
+    el.innerHTML = `
+      <div class="nap-message">
+        <span class="nap-icon">💤</span>
+        <span class="nap-text">${escapeText(state.settings.shrimpName)} is napping — back at ${timeStr}</span>
+      </div>
+      <button class="btn btn-wake" id="btn-wake">☀️ Wake ${escapeText(state.settings.shrimpName)}</button>
+    `
+    dashboard.appendChild(el)
+
+    if (onWake) {
+      const btn = document.getElementById('btn-wake')
+      if (btn) btn.addEventListener('click', onWake)
+    }
+  }
 }
 
 export function hideSettings(): void {
