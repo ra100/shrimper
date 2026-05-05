@@ -460,7 +460,13 @@ function hidePerks(): void {
 
 export function renderSettings(
   state: ShrimperState,
-  onSave: (min: number, max: number, shrimpName: string, pauseOnLock: boolean) => void,
+  onSave: (settings: {
+    min: number
+    max: number
+    shrimpName: string
+    pauseOnLock: boolean
+    schedule: import('./state').WorkSchedule
+  }) => void,
   onReset: () => void,
   onTestNotification: () => void,
 ): void {
@@ -509,6 +515,41 @@ export function renderSettings(
         <p class="setting-hint">Not supported in this browser (Chrome/Edge only).</p>
       </div>`
       }
+
+      <details class="setting-group schedule-section" ${state.settings.schedule.enabled ? 'open' : ''}>
+        <summary class="schedule-summary">
+          <span>Work Schedule</span>
+          <label class="checkbox-label schedule-toggle" onclick="event.stopPropagation()">
+            <input type="checkbox" id="schedule-enabled" ${state.settings.schedule.enabled ? 'checked' : ''}>
+            Enable
+          </label>
+        </summary>
+        <div class="schedule-body">
+          <div class="schedule-days">
+            ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+              .map(
+                (day, i) =>
+                  `<button type="button" class="day-btn ${state.settings.schedule.days[i] ? 'day-active' : ''}" data-day="${i}">${day}</button>`,
+              )
+              .join('')}
+          </div>
+          <div class="schedule-blocks">
+            <div class="schedule-block">
+              <span class="block-label">Morning</span>
+              <input type="time" id="block1-start" value="${state.settings.schedule.block1Start}">
+              <span class="block-sep">—</span>
+              <input type="time" id="block1-end" value="${state.settings.schedule.block1End}">
+            </div>
+            <div class="schedule-block">
+              <span class="block-label">Afternoon</span>
+              <input type="time" id="block2-start" value="${state.settings.schedule.block2Start}">
+              <span class="block-sep">—</span>
+              <input type="time" id="block2-end" value="${state.settings.schedule.block2End}">
+            </div>
+          </div>
+          <p class="setting-hint">Reminders only fire during these hours. Outside schedule, ${escapeText(state.settings.shrimpName)} naps — no penalty.</p>
+        </div>
+      </details>
 
       <div class="overlay-actions">
         <button class="btn btn-primary" id="btn-save-settings">Save</button>
@@ -560,12 +601,47 @@ export function renderSettings(
     }
   })
 
+  // Day toggle buttons
+  const dayBtns = panel.querySelectorAll<HTMLButtonElement>('.day-btn')
+  for (const btn of dayBtns) {
+    btn.addEventListener('click', () => btn.classList.toggle('day-active'))
+  }
+
   const nameInput = byId<HTMLInputElement>('name-input')
   byId('btn-save-settings').addEventListener('click', () => {
     const name = nameInput.value.trim() || state.settings.shrimpName
     const pauseOnLockEl = document.getElementById('pause-on-lock') as HTMLInputElement | null
     const pauseOnLock = pauseOnLockEl ? pauseOnLockEl.checked : state.settings.pauseOnLock
-    onSave(parseInt(minSlider.value, 10), parseInt(maxSlider.value, 10), name, pauseOnLock)
+
+    const scheduleEnabled = (document.getElementById('schedule-enabled') as HTMLInputElement).checked
+    const days = Array.from(dayBtns).map((b) => b.classList.contains('day-active')) as [
+      boolean,
+      boolean,
+      boolean,
+      boolean,
+      boolean,
+      boolean,
+      boolean,
+    ]
+    const block1Start = (document.getElementById('block1-start') as HTMLInputElement).value
+    const block1End = (document.getElementById('block1-end') as HTMLInputElement).value
+    const block2Start = (document.getElementById('block2-start') as HTMLInputElement).value
+    const block2End = (document.getElementById('block2-end') as HTMLInputElement).value
+
+    onSave({
+      min: parseInt(minSlider.value, 10),
+      max: parseInt(maxSlider.value, 10),
+      shrimpName: name,
+      pauseOnLock,
+      schedule: {
+        enabled: scheduleEnabled,
+        days,
+        block1Start,
+        block1End,
+        block2Start,
+        block2End,
+      },
+    })
   })
 
   byId('btn-cancel-settings').addEventListener('click', () => hideSettings())

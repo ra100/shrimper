@@ -678,29 +678,49 @@ function handlePauseToggle(): void {
   updatePauseButton(state.settings.paused)
 }
 
-function handleSettingsChange(
-  minInterval: number,
-  maxInterval: number,
-  shrimpName: string,
-  pauseOnLock: boolean,
-): void {
+function handleSettingsChange(settings: {
+  min: number
+  max: number
+  shrimpName: string
+  pauseOnLock: boolean
+  schedule: import('./state').WorkSchedule
+}): void {
+  const { min: minInterval, max: maxInterval, shrimpName, pauseOnLock, schedule } = settings
   const prevPauseOnLock = state.settings.pauseOnLock
   const prevMin = state.settings.minInterval
   const prevMax = state.settings.maxInterval
+  const prevScheduleEnabled = state.settings.schedule.enabled
   state.settings.minInterval = minInterval
   state.settings.maxInterval = maxInterval
   state.settings.shrimpName = shrimpName
   state.settings.pauseOnLock = pauseOnLock
+  state.settings.schedule = schedule
   escalation = createEscalation(minInterval, maxInterval)
 
   // Reschedule timer when intervals change, so the new range takes effect
   // immediately instead of waiting out the old random delay.
   const intervalsChanged = minInterval !== prevMin || maxInterval !== prevMax
-  if (intervalsChanged && !state.settings.paused && !state.pendingReminder) {
+  if (intervalsChanged && !state.settings.paused && !state.pendingReminder && isScheduleActive()) {
     timer.scheduleNext()
     state.nextFireTime = timer.getNextFireTime()
     const el = document.getElementById('countdown')
     if (el) el.textContent = getApproxTimeRemaining(state.nextFireTime)
+  }
+
+  // If schedule changed, re-evaluate nap state
+  if (schedule.enabled !== prevScheduleEnabled || schedule.enabled) {
+    if (state.wakeOverrideUntil > 0 && !schedule.enabled) {
+      state.wakeOverrideUntil = 0
+    }
+    const active = isScheduleActive()
+    if (active && !timer.isRunning() && !state.settings.paused && !state.pendingReminder) {
+      timer.start()
+      state.nextFireTime = timer.getNextFireTime()
+    } else if (!active && timer.isRunning()) {
+      enterNap()
+    }
+    updateNapState(state, active, handleWakeOverride)
+    scheduleTransitionCheck()
   }
 
   saveState(state)

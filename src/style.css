@@ -1219,3 +1219,134 @@ body {
     gap: 10px;
   }
 }
+
+/* Work Schedule */
+.schedule-section {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0;
+  margin-top: 8px;
+}
+
+.schedule-section[open] {
+  padding-bottom: 12px;
+}
+
+.schedule-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-weight: 500;
+  user-select: none;
+}
+
+.schedule-toggle {
+  font-weight: 400;
+  font-size: 0.85rem;
+  gap: 4px;
+}
+
+.schedule-body {
+  padding: 0 12px;
+}
+
+.schedule-days {
+  display: flex;
+  gap: 4px;
+  margin: 8px 0;
+  flex-wrap: wrap;
+}
+
+.day-btn {
+  width: 38px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-light);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.day-btn.day-active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.schedule-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.schedule-block {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.block-label {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  min-width: 64px;
+}
+
+.block-sep {
+  color: var(--text-light);
+}
+
+.schedule-block input[type="time"] {
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Nap overlay */
+.nap-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  margin-top: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.nap-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+
+.nap-icon {
+  font-size: 1.4rem;
+}
+
+.btn-wake {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-wake:hover {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
