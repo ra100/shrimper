@@ -1,9 +1,19 @@
+export interface WorkSchedule {
+  enabled: boolean
+  days: [boolean, boolean, boolean, boolean, boolean, boolean, boolean] // Mon..Sun
+  block1Start: string // "HH:MM" 24h local
+  block1End: string
+  block2Start: string
+  block2End: string
+}
+
 export interface ShrimperSettings {
   minInterval: number // minutes
   maxInterval: number // minutes
   paused: boolean
   shrimpName: string
   pauseOnLock: boolean
+  schedule: WorkSchedule
 }
 
 export type AchievementId =
@@ -50,19 +60,31 @@ export interface PendingReminder {
   tipId: string
   firedAt: number
   lastDecayAt?: number
+  /** Condition points lost to auto-decay during this overlay. Refunded on complete. */
+  decayApplied?: number
 }
 
 export interface ShrimperState {
-  version: 3
+  version: 4
   settings: ShrimperSettings
   progress: ShrimperProgress
   pendingReminder: PendingReminder | null
   nextFireTime: number
   activePerks: ActivePerks
+  wakeOverrideUntil: number
 }
 
 const STORAGE_KEY = 'shrimper-state'
-const SCHEMA_VERSION = 3 as const
+const SCHEMA_VERSION = 4 as const
+
+const DEFAULT_SCHEDULE: WorkSchedule = {
+  enabled: true,
+  days: [true, true, true, true, true, false, false],
+  block1Start: '09:00',
+  block1End: '12:00',
+  block2Start: '13:00',
+  block2End: '17:00',
+}
 
 const DEFAULT_SETTINGS: ShrimperSettings = {
   minInterval: 15,
@@ -70,6 +92,7 @@ const DEFAULT_SETTINGS: ShrimperSettings = {
   paused: false,
   shrimpName: 'Kevin',
   pauseOnLock: false,
+  schedule: { ...DEFAULT_SCHEDULE },
 }
 
 const DEFAULT_ACHIEVEMENTS: Achievements = {
@@ -107,11 +130,12 @@ const DEFAULT_PROGRESS: ShrimperProgress = {
 function freshState(): ShrimperState {
   return {
     version: SCHEMA_VERSION,
-    settings: { ...DEFAULT_SETTINGS },
+    settings: { ...DEFAULT_SETTINGS, schedule: { ...DEFAULT_SCHEDULE } },
     progress: { ...DEFAULT_PROGRESS, achievements: { ...DEFAULT_ACHIEVEMENTS } },
     pendingReminder: null,
     nextFireTime: 0,
     activePerks: { ...DEFAULT_ACTIVE_PERKS },
+    wakeOverrideUntil: 0,
   }
 }
 
@@ -121,11 +145,14 @@ export function loadState(): ShrimperState {
     if (!raw) return freshState()
     const parsed = JSON.parse(raw)
     const v = parsed?.version
-    if (v !== 2 && v !== SCHEMA_VERSION) return freshState()
-    // v2 → v3 migration: preserve progress, add perk fields with defaults.
+    if (v !== 2 && v !== 3 && v !== SCHEMA_VERSION) return freshState()
     return {
       version: SCHEMA_VERSION,
-      settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
+      settings: {
+        ...DEFAULT_SETTINGS,
+        ...parsed.settings,
+        schedule: { ...DEFAULT_SCHEDULE, ...(parsed.settings?.schedule ?? {}) },
+      },
       progress: {
         ...DEFAULT_PROGRESS,
         ...parsed.progress,
@@ -136,6 +163,7 @@ export function loadState(): ShrimperState {
       pendingReminder: parsed.pendingReminder ?? null,
       nextFireTime: parsed.nextFireTime ?? 0,
       activePerks: { ...DEFAULT_ACTIVE_PERKS, ...(parsed.activePerks ?? {}) },
+      wakeOverrideUntil: parsed.wakeOverrideUntil ?? 0,
     }
   } catch {
     return freshState()
