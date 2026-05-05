@@ -5,7 +5,7 @@ interface TimeOfDay {
   m: number
 }
 
-export function parseTime(hhmm: string): TimeOfDay {
+function parseTime(hhmm: string): TimeOfDay {
   const [h, m] = hhmm.split(':').map(Number)
   return { h, m }
 }
@@ -23,7 +23,7 @@ function dayIndex(now: Date): number {
   return (now.getDay() + 6) % 7
 }
 
-export function isTimeInBlock(now: Date, start: string, end: string): boolean {
+function isTimeInBlock(now: Date, start: string, end: string): boolean {
   const s = parseTime(start)
   const e = parseTime(end)
   const startMin = minutesOfDay(s.h, s.m)

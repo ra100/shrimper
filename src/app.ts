@@ -7,6 +7,9 @@ import {
   trackDismiss,
   trackPause,
   trackPerk,
+  trackScheduleActive,
+  trackScheduleNap,
+  trackScheduleWake,
   trackSnooze,
 } from './analytics'
 import { hasSeenCurrentVersion, markVersionSeen, renderChangelogModal } from './changelog'
@@ -629,6 +632,7 @@ function enterNap(): void {
     state.nextFireTime = 0
     saveState(state)
   }
+  trackScheduleNap()
   updateNapState(state, false, handleWakeOverride)
 }
 
@@ -642,10 +646,12 @@ function enterActiveFromNap(): void {
     timer.start()
     persistSchedule()
   }
+  trackScheduleActive()
   updateNapState(state, true, handleWakeOverride)
 }
 
 function handleWakeOverride(): void {
+  trackScheduleWake()
   const schedule = state.settings.schedule
   const ms = getMsUntilTransition(schedule, 0)
   state.wakeOverrideUntil = Date.now() + Math.min(ms, 2_147_483_647)

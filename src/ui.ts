@@ -613,7 +613,8 @@ export function renderSettings(
     const pauseOnLockEl = document.getElementById('pause-on-lock') as HTMLInputElement | null
     const pauseOnLock = pauseOnLockEl ? pauseOnLockEl.checked : state.settings.pauseOnLock
 
-    const scheduleEnabled = (document.getElementById('schedule-enabled') as HTMLInputElement).checked
+    const scheduleEnabled = (document.getElementById('schedule-enabled') as HTMLInputElement)
+      .checked
     const days = Array.from(dayBtns).map((b) => b.classList.contains('day-active')) as [
       boolean,
       boolean,
@@ -668,11 +669,7 @@ export function updatePauseButton(paused: boolean): void {
   if (countdown && paused) countdown.textContent = '⏸ Paused'
 }
 
-export function updateNapState(
-  state: ShrimperState,
-  isActive: boolean,
-  onWake?: () => void,
-): void {
+export function updateNapState(state: ShrimperState, isActive: boolean, onWake?: () => void): void {
   const napOverlay = document.getElementById('nap-overlay')
   const nextReminder = document.getElementById('next-reminder')
 

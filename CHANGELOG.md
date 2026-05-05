@@ -5,6 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versions follow 
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-05-05
+
+### Added
+
+- 🕐 **Work schedule** — configure active hours (default 9-12, 13-17) and days (Mon-Fri). Outside these windows, Kevin naps automatically — no reminders fire and no condition penalty accrues. Collapsible schedule section in Settings with day toggles and dual time-block inputs.
+- 💤 **Nap state dashboard** — when outside work hours, dashboard shows a nap indicator with next-active time and a "Wake Kevin" button to override the schedule temporarily.
+- 📊 **Schedule analytics** — track wake overrides and automatic nap transitions.
+
+### Changed
+
+- State schema v3 → v4 (migrates automatically, preserves all existing data).
+
+## [0.7.1] — 2026-04-30
+
+### Fixed
+
+- 🐛 **Progress refund on completion** — auto-decay applied while a reminder overlay is open is now refunded when you hit Done. Previously, leaving the overlay open past a decay tick silently canceled the +3 completion gain, making the posture bar feel stuck. Ignoring/dismissing still keeps the decay penalty.
+
 ## [0.7.0] — 2026-04-29
 
 ### Added

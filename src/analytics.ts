@@ -39,3 +39,15 @@ export function trackDailyChallengeComplete(id: string): void {
 export function trackDailyChallengeClaim(id: string): void {
   track('daily-challenge-claim', { id })
 }
+
+export function trackScheduleWake(): void {
+  track('schedule-wake-override')
+}
+
+export function trackScheduleNap(): void {
+  track('schedule-nap-enter')
+}
+
+export function trackScheduleActive(): void {
+  track('schedule-nap-exit')
+}
